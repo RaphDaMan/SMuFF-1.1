@@ -30,6 +30,7 @@
 #define SD_READING_SERVOS     5
 #define SD_READING_PURGES     6
 #define SD_READING_STEPPERS   7
+#define STAT_SCANNING_I2C     8
 
 const char P_MenuItemBack [] PROGMEM        = { "< BACK\n" };
 const char P_MenuItemSeparator [] PROGMEM   = { "\035\n"};
@@ -205,6 +206,7 @@ const char P_SD_ReadingPurges[] PROGMEM     = { "Purges" };
 const char P_SD_ReadingSteppers[] PROGMEM   = { "Steppers" };
 const char P_SD_InitError[] PROGMEM         = { "SD-Card not ready!" };
 const char P_SD_NoConfig[] PROGMEM          = { "No config file found!" };
+const char P_Scanning[] PROGMEM             = { "Scanning I2C #%d..." };
 
 const char P_Ok[] PROGMEM                   = { "ok\n" };
 const char P_Start[] PROGMEM                = { "start\n" };

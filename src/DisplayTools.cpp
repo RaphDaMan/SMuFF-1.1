@@ -439,7 +439,7 @@ void drawUserMessage(String message, bool smallFont /* = false */, bool center /
   userMessageTime = millis();
 }
 
-void drawSDStatus(int8_t stat)
+void drawSDStatus(int8_t stat, uint8_t opt)
 {
   char tmp[80];
 
@@ -469,6 +469,9 @@ void drawSDStatus(int8_t stat)
       break;
     case SD_READING_STEPPERS:
       snprintf_P(tmp, ArraySize(tmp)-1, P_SD_Reading, P_SD_ReadingSteppers);
+      break;
+    case STAT_SCANNING_I2C:
+      snprintf_P(tmp, ArraySize(tmp)-1, P_Scanning, opt);
       break;
   }
   // __debugS(D, PSTR("\tdrawSDStatus: drawing status"));
@@ -625,7 +628,7 @@ void refreshStatus(bool feedOnly) {}                        // not used
 void setDisplayPowerSave(bool state) {}                     // not used
 void drawTestrunMessage(unsigned long loop, char *msg) {}   // not used
 void drawSelectingMessage(uint8_t tool) {}                  // not used
-void drawSDStatus(int8_t stat) {}                           // not used
+void drawSDStatus(int8_t stat, uint8_t opt) {}              // not used
 void signalNoTool() {}                                      // not used
 
 void drawPurgingMessage(double len, uint8_t tool) {

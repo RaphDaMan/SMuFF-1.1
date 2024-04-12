@@ -654,26 +654,30 @@ void setup() {
   initUSB();                // init the USB serial so it's being recognized by the Windows-PC
   __debugS(D, PSTR("\tInitializing I2C..."));
   setupI2C();               // setup I2C/TWI devices
+  __debugS(D, PSTR("\tInitializing display..."));
+  setupDisplay();           // setup display first in order to show error messages if neccessary
+  __debugS(SP, after, "setup Display");
 
   #if defined(USE_I2C)
     __debugS(D, PSTR("\tScanning for I2C Devices on bus 1..."));
     // don't scan I2C if no I2C devices are being used; Scan will take ages
+    drawSDStatus(STAT_SCANNING_I2C, 1);
     enumI2cDevices(1);
     __debugS(D, after, "enumerating I2C Devices on bus 1");
   #endif
   #if defined(USE_SPLITTER_ENDSTOPS)
     __debugS(D, PSTR("\tScanning for I2C Devices on bus 2..."));
+    drawSDStatus(STAT_SCANNING_I2C, 2);
     enumI2cDevices(2);
     __debugS(D, after, "enumerating I2C Devices on bus 2");
   #endif
   #if defined(USE_MULTISERVO)
     __debugS(D, PSTR("\tScanning for I2C Devices on bus 3..."));
+    drawSDStatus(STAT_SCANNING_I2C, 3);
     enumI2cDevices(3);
     __debugS(D, after, "enumerating I2C Devices on bus 3");
   #endif
 
-  setupDisplay();                                     // setup display first in order to show error messages if neccessary
-  __debugS(SP, after, "setup Display");
   #if !defined(USE_SERIAL_DISPLAY)
     delay(250);
     setupEncoder();                                   // setup encoder

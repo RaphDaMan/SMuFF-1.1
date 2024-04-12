@@ -26,10 +26,10 @@ typedef uint8_t     pin_t;
 typedef uint32_t    pin_t;
 #endif
 
-#define VERSION_STRING    "V3.25"
+#define VERSION_STRING    "V3.26"
 #define PMMU_VERSION      106               // Version number for Prusa MMU2 Emulation mode
 #define PMMU_BUILD        372               // Build number for Prusa MMU2 Emulation mode
-#define VERSION_DATE      "2024-01-20"
+#define VERSION_DATE      "2024-02-13"
 #define DEBUG_FILE        "/debug.txt"
 #define DEBUG_USB         "/dbg2usb.txt"    // send debug messages to USB port (Serial 0)
 #define DEBUG_EXP         "/dbg2exp.txt"    // send debug messages to EXP port (Serial 1)

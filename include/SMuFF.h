@@ -480,7 +480,7 @@ extern void drawSelectingMessage(uint8_t tool);
 extern void drawPurgingMessage(double len, uint8_t tool);
 extern void drawUpload(uint32_t remain);
 extern void drawUserMessage(String message, bool smallFont = false, bool center = true, void (*drawCallbackFunc)() = nullptr);
-extern void drawSDStatus(int8_t stat);
+extern void drawSDStatus(int8_t stat, uint8_t opt = 0);
 extern void drawFeed(bool updateBuffer = true);
 extern void drawSDRemoved(bool removed);
 extern void resetDisplay();

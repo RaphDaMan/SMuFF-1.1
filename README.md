@@ -59,6 +59,10 @@ A special thanks to the folks who have created the following (Arduino) libraries
 
 ## Recent changes
 
+**3.26** - minor change
+
++ moved scanning for I2C devices after display has been initialized, so it becomes obvious when the I2C scan is hanging, which happens if no I2C devices are attached to the bus.
+
 **3.25** - minor fixes/changes
 
 + restricted scanning of the I2C bus to valid slave addresses (0-7 and 120-127 are reserved addresses). Although this didn't cause any error yet, it could have caused some unwanted effects in the future.
