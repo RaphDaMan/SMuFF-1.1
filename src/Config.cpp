@@ -142,31 +142,52 @@ bool readMainConfig()
       return false;
     }
 
+    // __debugS(DEV4, PSTR("readMainConfig: before deserialize..."));
     DynamicJsonDocument jsonDoc(capacity);      // use memory from heap to deserialize
     DeserializationError error = deserializeJson(jsonDoc, cfg);
-    //__debugS(D, PSTR("readMainConfig: after deserialize... (%lu bytes)"), jsonDoc.memoryUsage());
+    // __debugS(DEV4, PSTR("readMainConfig: after deserialize... (%lu bytes)"), jsonDoc.memoryUsage());
     cfg.close();
+    // __debugS(DEV4, PSTR("readMainConfig: config file closed"));
     if (error)
       showDeserializeFailed(error, P_ConfigFail1);
     else {
+      // __debugS(DEV4, PSTR("readMainConfig: drawing status"));
       drawSDStatus(SD_READING_CONFIG);
+      // __debugS(DEV4, PSTR("readMainConfig: drawing status ok"));
       smuffConfig.toolCount =                   toolsMinMax(jsonDoc[toolCount]);
+      // __debugS(DEV4, PSTR("readMainConfig: tool count %d"), smuffConfig.toolCount);
       smuffConfig.lcdContrast =                 contrastMinMax(jsonDoc[contrast]);
+      // __debugS(DEV4, PSTR("readMainConfig: LCD contrast %d"), smuffConfig.lcdContrast);
       smuffConfig.backlightColor =              jsonDoc[backlightColor] | 7;   // set backlight color to White if not set
+      // __debugS(DEV4, PSTR("readMainConfig: backlight color %d"), smuffConfig.backlightColor);
       smuffConfig.toolColor =                   jsonDoc[toolColor] | 5;       // set tool color to Magenta if not set
+      // __debugS(DEV4, PSTR("readMainConfig: tool color %d"), smuffConfig.toolColor);
       smuffConfig.encoderTickSound =            jsonDoc[encoderTicks];
+      // __debugS(DEV4, PSTR("readMainConfig: encoder tick sound %d"), smuffConfig.encoderTickSound);
       smuffConfig.bowdenLength =                jsonDoc[bowdenLength];
+      // __debugS(DEV4, PSTR("readMainConfig: bowden length %d"), smuffConfig.bowdenLength);
       smuffConfig.selectorDistance =            jsonDoc[selectorDist];
+      // __debugS(DEV4, PSTR("readMainConfig: selector distance %f"), smuffConfig.selectorDistance);
       smuffConfig.selectorUnloadDist =          jsonDoc[selectorUnloadDist] | smuffConfig.selectorDistance;
+      // __debugS(DEV4, PSTR("readMainConfig: unload distance %f"), smuffConfig.selectorUnloadDist);
       smuffConfig.i2cAddress =                  i2cAdrMinMax(jsonDoc[i2cAdr]);
+      // __debugS(DEV4, PSTR("readMainConfig: I2C addr %d"), smuffConfig.i2cAddress);
       smuffConfig.menuAutoClose =               jsonDoc[autoClose];
+      // __debugS(DEV4, PSTR("readMainConfig: menu auto close %d"), smuffConfig.menuAutoClose);
       smuffConfig.serialBaudrates[0] =          jsonDoc[serialBaudrate][0];
+      // __debugS(DEV4, PSTR("readMainConfig: baudrate 0 %d"), smuffConfig.serialBaudrates[0]);
       smuffConfig.serialBaudrates[1] =          jsonDoc[serialBaudrate][1];
+      // __debugS(DEV4, PSTR("readMainConfig: baudrate 1 %d"), smuffConfig.serialBaudrates[1]);
       smuffConfig.serialBaudrates[2] =          jsonDoc[serialBaudrate][2];
+      // __debugS(DEV4, PSTR("readMainConfig: baudrate 2 %d"), smuffConfig.serialBaudrates[2]);
       smuffConfig.serialBaudrates[3] =          jsonDoc[serialBaudrate][3];
+      // __debugS(DEV4, PSTR("readMainConfig: baudrate 3 %d"), smuffConfig.serialBaudrates[3]);
       smuffConfig.fanSpeed =                    jsonDoc[fanSpeed];
+      // __debugS(DEV4, PSTR("readMainConfig: fan speed %d"), smuffConfig.fanSpeed);
       smuffConfig.powerSaveTimeout =            jsonDoc[psTimeout];
+      // __debugS(DEV4, PSTR("readMainConfig: idle timeout %d"), smuffConfig.powerSaveTimeout);
       smuffConfig.sendActionCmds =              jsonDoc[sendAction];
+      // __debugS(DEV4, PSTR("readMainConfig: send action cmds %d"), smuffConfig.sendActionCmds);
 
       const char* p2 =                          jsonDoc[wipeSequence];
       const char* p3 =                          jsonDoc[lBtnDown];
@@ -174,6 +195,7 @@ bool readMainConfig()
       const char* p5 =                          jsonDoc[rBtnDown];
       const char* p6 =                          jsonDoc[rBtnHold];
       const char* p7 =                          jsonDoc[devName];
+      // __debugS(DEV4, PSTR("readMainConfig: reading sequences"));
       if(p2 != nullptr && strlen(p2) > 0) {
         strncpy(smuffConfig.wipeSequence, p2, ArraySize(smuffConfig.wipeSequence));
       }
@@ -192,6 +214,7 @@ bool readMainConfig()
       if(p7 != nullptr && strlen(p7) > 0) {
         strncpy(smuffConfig.deviceName, p7, ArraySize(smuffConfig.deviceName));
       }
+      // __debugS(DEV4, PSTR("readMainConfig: reading sequences ok"));
 
       smuffConfig.prusaMMU2 =                   jsonDoc[emulatePrusa];
       smuffConfig.hasPanelDue =                 jsonDoc[hasPanelDue];
@@ -215,6 +238,8 @@ bool readMainConfig()
       smuffConfig.revolverClose =               jsonDoc[revolverClosed];
       smuffConfig.useSplitter =                 jsonDoc[useSplitter];
       smuffConfig.splitterDist =                jsonDoc[splitterDist];
+      // __debugS(DEV4, PSTR("readMainConfig: reading more settings ok"));
+
       #if defined(USE_DDE)
       smuffConfig.useDDE =                      true;
       #else
@@ -237,6 +262,7 @@ bool readMainConfig()
       smuffConfig.spi3Miso =                    jsonDoc[spi3Miso] | 1;
       smuffConfig.spoolRewindSpeed =            jsonDoc[spoolSpeed] | 75;
       smuffConfig.autoRewind =                  jsonDoc[autoRewind];
+      // __debugS(DEV4, PSTR("readMainConfig: reading yet more settings ok"));
       
       if(smuffConfig.speedsInMMS) {
         mmsMax = MAX_MMS;

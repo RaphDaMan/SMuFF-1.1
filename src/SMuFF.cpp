@@ -656,7 +656,7 @@ void setup() {
   setupI2C();               // setup I2C/TWI devices
   __debugS(D, PSTR("\tInitializing display..."));
   setupDisplay();           // setup display first in order to show error messages if neccessary
-  __debugS(SP, after, "setup Display");
+  __debugS(SP, after, PSTR("setup Display"));
 
   #if defined(USE_I2C)
     __debugS(D, PSTR("\tScanning for I2C Devices on bus 1..."));
@@ -681,7 +681,7 @@ void setup() {
   #if !defined(USE_SERIAL_DISPLAY)
     delay(250);
     setupEncoder();                                   // setup encoder
-    __debugS(SP, after, "setup Encoder");
+    __debugS(SP, after, PSTR("setup Encoder"));
   #endif
 
   __debugS(DEV, PSTR("\treading Configs..."));
@@ -693,13 +693,13 @@ void setup() {
       readRevolverMapping();                          // read REVOLVERMAPS.json from SD-Card
     #endif
   }
-  __debugS(SP, after, "read Config");
+  __debugS(SP, after, PSTR("read Config"));
   initFastLED();                                      // init FastLED if configured
   setContrast(smuffConfig.lcdContrast);               // reset display contrast after reading config
   initHwDebug();                                      // init hardware debugging
 
   setupSerial();                                      // setup all serial ports
-  __debugS(SP, after, "setup Serial");
+  __debugS(SP, after, PSTR("setup Serial"));
 
   if(smuffConfig.useDuet) {
     // Duet3D uses Serial 1 for communication, Serial 3 for PanelDue (optional)
@@ -709,18 +709,18 @@ void setup() {
     __debugS(SP, PSTR("\tdebug & terminal serials swapped for Duet3D/RRF"));
   }
   setupSteppers();                                    // setup all steppers
-  __debugS(SP, after, "setup Steppers");
+  __debugS(SP, after, PSTR("setup Steppers"));
   setupServos();                                      // setup all servos
-  __debugS(SP, after, "setup Servos");
+  __debugS(SP, after, PSTR("setup Servos"));
   setupSpoolMotors();                                 // setup all spool-motors
-  __debugS(SP, after, "setup SpoolMotors");
+  __debugS(SP, after, PSTR("setup SpoolMotors"));
   setupTimers();                                      // setup all timers
-  __debugS(SP, after, "setup Timers");
+  __debugS(SP, after, PSTR("setup Timers"));
   setupRelay();                                       // setup relay board
-  __debugS(SP, after, "setup Relay");
+  __debugS(SP, after, PSTR("setup Relay"));
   #ifdef HAS_TMC_SUPPORT
     setupTMCDrivers();                                  // setup TMC drivers if any are used
-    __debugS(SP, after, "setup TMC drivers");
+    __debugS(SP, after, PSTR("setup TMC drivers"));
   #endif
   testFastLED(false);                                 // run a test sequence on backlight FastLEDs
   testFastLED(true);                                  // run a test sequence on tools FastLEDs
@@ -729,17 +729,17 @@ void setup() {
   setupBacklight();                                   // setup display backlight
   setupDuetSignals();                                 // setup Duet3D signal pins
   setupFan();                                         // setup internal cooling fan
-  __debugS(SP, after, "setup Misc.");
+  __debugS(SP, after, PSTR("setup Misc."));
   getStoredData();                                    // read EEPROM.json from SD-Card; this call must happen after setupSteppers()
   
   #if defined(USE_SPLITTER_ENDSTOPS)
     setupEStopMux();                                  // setup enstops multiplexer if configured
-    __debugS(SP, after, "setup EStop Mux");
+    __debugS(SP, after, PSTR("setup EStop Mux"));
   #endif
   uint32_t now = millis();
   readSequences();                                    // read sound files from SD-Card sounds folder
   __debugS(D, PSTR("\tloading sequences took %ld ms"), millis()-now);
-  __debugS(SP, after, "read Sequences");
+  __debugS(SP, after, PSTR("read Sequences"));
 
   if (smuffConfig.homeAfterFeed)
     moveHome(REVOLVER, false, false);                 // home Revolver / Lid-Servo

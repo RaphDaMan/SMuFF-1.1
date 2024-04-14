@@ -42,23 +42,28 @@ TMC2209Stepper *showDriver = nullptr;
 #define TOOL_FONT               u8g2_font_logisoso22_tr
 
 void setupDisplay() {
+  // __debugS(DEV4, PSTR("\tsetupDisplay start"));
   // The next code line (display.setI2CAddress) changes the address for your TWI_DISPLAY if it's
   // configured differently.
   // Usually, those displays are pre-configured at I2C address 0x78, which equals to 0x3c
   // from the software side because of the 7-Bit address mode.
   // If it's configured at 0x7a, you need to change the I2C_DISPLAY_ADDRESS in Config.h to 0x3d.
   #if I2C_DISPLAY_ADDRESS != 0x3C
-  display.setI2CAddress(I2C_DISPLAY_ADDRESS);
-  __debugS(I, PSTR("setupDisplay: I2C address set to 0x%02X"), I2C_DISPLAY_ADDRESS);
+    display.setI2CAddress(I2C_DISPLAY_ADDRESS);
+    __debugS(I, PSTR("setupDisplay: I2C address set to 0x%02X"), I2C_DISPLAY_ADDRESS);
   #endif
   #if defined(USE_LEONERD_DISPLAY)
     display.begin();
   #else
-  display.begin(/*Select=*/ENCODER_BUTTON_PIN, /* menu_next_pin= */ U8X8_PIN_NONE, /* menu_prev_pin= */ U8X8_PIN_NONE, /* menu_home_pin= */ U8X8_PIN_NONE);
+    display.begin(/*Select=*/ENCODER_BUTTON_PIN, /* menu_next_pin= */ U8X8_PIN_NONE, /* menu_prev_pin= */ U8X8_PIN_NONE, /* menu_home_pin= */ U8X8_PIN_NONE);
+    // __debugS(DEV4, PSTR("\tsetupDisplay: after .begin()"));
   #endif
   display.enableUTF8Print();
+  // __debugS(DEV4, PSTR("\tsetupDisplay: after .enableUTF8Print()"));
   resetDisplay();
+  // __debugS(DEV4, PSTR("\tsetupDisplay: after resetDisplay()"));
   display.setContrast(smuffConfig.lcdContrast);
+  // __debugS(DEV4, PSTR("\tsetupDisplay: after .setContrast()"));
 }
 
 void drawVersion() {
@@ -443,6 +448,8 @@ void drawSDStatus(int8_t stat, uint8_t opt)
 {
   char tmp[80];
 
+  memset(tmp, 0, ArraySize(tmp));
+  // __debugS(DEV4, PSTR("\tdrawSDStatus: status val=%d opt=%d"), stat, opt);
   switch (stat) {
     case SD_ERR_INIT:
       snprintf_P(tmp, ArraySize(tmp)-1, P_SD_InitError);
@@ -474,15 +481,18 @@ void drawSDStatus(int8_t stat, uint8_t opt)
       snprintf_P(tmp, ArraySize(tmp)-1, P_Scanning, opt);
       break;
   }
-  // __debugS(D, PSTR("\tdrawSDStatus: drawing status"));
+  // __debugS(DEV4, PSTR("\tdrawSDStatus: status => '%s'"), tmp);
   display.clearBuffer();
+  // __debugS(DEV4, PSTR("\tdrawSDStatus: buffer clear"));
   drawLogo();
+  // __debugS(DEV4, PSTR("\tdrawSDStatus: logo drawn"));
   drawVersion();
+  // __debugS(DEV4, PSTR("\tdrawSDStatus: version drawn"));
   display.setCursor((display.getDisplayWidth() - display.getStrWidth(tmp)) / 2, display.getDisplayHeight()-1);
   display.print(tmp);
-  // __debugS(D, PSTR("\tdrawSDStatus: updating display"));
+  // __debugS(DEV4, PSTR("\tdrawSDStatus: updating display"));
   display.updateDisplay();
-  __debugS(DEV, PSTR("\tdrawSDStatus: %d -> %s"), stat, tmp);
+  // __debugS(DEV4, PSTR("\tdrawSDStatus: %d -> %s"), stat, tmp);
 }
 
 bool showFeederBlockedMessage() {
