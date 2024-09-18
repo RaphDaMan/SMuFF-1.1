@@ -59,6 +59,13 @@ A special thanks to the folks who have created the following (Arduino) libraries
 
 ## Recent changes
 
+**3.27** - minor bug fixes
+
++ fixed bug on **FeatherWing DC-Motor Board** causing not all motors were able to spin because of the wrong pin assignment.
++ corrected help files for **M3/M4** GCodes (parameter **S** denotes the **Tool** but not neccessarily the **Motor** number).
++ fixed bug on **SKR E3-DIP V1.1** not beinig able to set relay pin to **Y-STOP** due to conditional compiling constraints.
++ corrected some flaws in *testrun()* not correctly reporting "feeding errors" as they occur.
+
 **3.26** - minor change
 
 + moved scanning for I2C devices after display has been initialized, so it becomes obvious when the I2C scan is hanging, which happens if no I2C devices are attached to the bus.

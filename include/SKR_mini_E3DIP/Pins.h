@@ -70,17 +70,17 @@
 #define Z_CS_PIN        PC12   // doubles as ZUART when used in serial mode
 #define E_CS_PIN        PD2    // doubles as EUART when used in serial mode
 
+#define RELAY_PIN       PC12   // Z-MS3
 
 #if defined(RELAY_ON_PROBE)
-    #if !defined(RELAY_ON_YSTOP)
-        #define RELAY_PIN PC14   // PROBE (Relay for stepper motor switching)
-    #else
-        #define RELAY_PIN PC0    // Y-STOP (alternative for Relay; if nothing else is connected to)
-    #endif
-#else
-    #define RELAY_PIN PC12   // Z-MS3
+    #undef RELAY_PIN
+    #define RELAY_PIN PC14   // PROBE (Relay for stepper motor switching)
+    #pragma message "Relais on PROBE pin"
+#elif defined(RELAY_ON_YSTOP)
+    #undef RELAY_PIN
+    #define RELAY_PIN PC0    // Y-STOP (alternative for Relay; if nothing else is connected to)
+    #pragma message "Relais on Y-STOP pin"
 #endif
-
 
 #if !defined(SMUFF_V5)
     #if defined(SMUFF_V6S)  // V6S uses linear stepper for lid; servo signals move to Z-Driver socket

@@ -1433,6 +1433,7 @@ bool selectTool(int8_t ndx, char* errmsg, bool showMessage) {
   ndx = swapTools[ndx];
   if (feederJammed) {
     beep(4);
+    feederErrors++;
     sprintf_P(_msg1, P_FeederJammed);
     strcat_P(_msg1, P_Aborting);
     if (showMessage) {
@@ -2144,6 +2145,15 @@ void setTestRunPending(const char* testfile) {
   isTestPending = true;
 }
 
+void evalSecondEnstop (int8_t tool, unsigned long endstop2Hit[], unsigned long endstop2Miss[]) {
+  bool feeder2stat = feederEndstop(2);
+  __debugS(DEV4, PSTR("Tool: %d -> Endstop2: %d"), tool, feeder2stat);
+  if (feeder2stat)
+    endstop2Hit[tool]++;
+  else
+    endstop2Miss[tool]++;
+}
+
 void testRun(const char *fname)
 {
   char line[50];
@@ -2221,10 +2231,12 @@ void testRun(const char *fname)
           if (*line == ';')
             continue;
           gCode = String(line);
+
           if(gCode.indexOf("{PRPT}") > -1) {
             printReport(line, loopCnt, cmdCnt, toolChanges, secs, endstop2Hit, endstop2Miss);
             continue;
           }
+
           if (gCode.indexOf("{RNDT}") > -1) {
             // randomize the next tool number in a loop to avoid
             // selecting the same tool that's currently set
@@ -2243,20 +2255,19 @@ void testRun(const char *fname)
           }
           parseGcode(gCode, -1);
           //__debugS(D, PSTR("GCode: %s"), gCode.c_str());
+
           if (*line == 'T')
           {
             tool = (int8_t)strtol(line + 1, nullptr, 10);
-            lastTool = toolSelected;
+            lastTool = tool;
             toolChanges++;
+            if(!smuffConfig.prusaMMU2) {
+              evalSecondEnstop(tool, endstop2Hit, endstop2Miss);
+            }
             showReport = true;
           }
-          if (*line == 'C')
-          {
-            if (!feederEndstop(2))
-              endstop2Hit[tool]++;
-            else
-              endstop2Miss[tool]++;
-            showReport = true;
+          if(smuffConfig.prusaMMU2 && *line == 'C') {
+            evalSecondEnstop(tool, endstop2Hit, endstop2Miss);
           }
           cmdCnt++;
           if (cmdCnt % 10 == 0)

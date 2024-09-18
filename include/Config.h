@@ -26,10 +26,10 @@ typedef uint8_t     pin_t;
 typedef uint32_t    pin_t;
 #endif
 
-#define VERSION_STRING    "V3.26"
+#define VERSION_STRING    "V3.27"
 #define PMMU_VERSION      106               // Version number for Prusa MMU2 Emulation mode
 #define PMMU_BUILD        372               // Build number for Prusa MMU2 Emulation mode
-#define VERSION_DATE      "2024-02-13"
+#define VERSION_DATE      "2024-08-28"
 #define DEBUG_FILE        "/debug.txt"
 #define DEBUG_USB         "/dbg2usb.txt"    // send debug messages to USB port (Serial 0)
 #define DEBUG_EXP         "/dbg2exp.txt"    // send debug messages to EXP port (Serial 1)
@@ -128,20 +128,24 @@ typedef uint32_t    pin_t;
 #define MD_IN2              11
 #define ME_PWM              12              // not on ME704! but possible on a custom made PCB
 #define ME_IN1              13
-#define ME_IN2              14
+#define ME_IN2              14A
 #else
-#define MA_PWM              2               // output assignment on PCA9685 (FeatherWing Motor Shield)
-#define MA_IN1              3
-#define MA_IN2              4
-#define MB_PWM              5
-#define MB_IN1              6
-#define MB_IN2              7
-#define MC_PWM              8
-#define MC_IN1              9
-#define MC_IN2              10
-#define MD_PWM              11
-#define MD_IN1              12
-#define MD_IN2              13
+// output assignment on PCA9685 (FeatherWing Motor Shield)
+#define MA_PWM              8               // M1
+#define MA_IN1              10
+#define MA_IN2              9
+#define MB_PWM              13              // M2
+#define MB_IN1              11
+#define MB_IN2              12
+#define MC_PWM              2               // M3
+#define MC_IN1              4
+#define MC_IN2              3
+#define MD_PWM              7              // M4
+#define MD_IN1              5
+#define MD_IN2              6
+#define ME_PWM              0              // not on FeatherWing but possible on a custom made PCB
+#define ME_IN1              14
+#define ME_IN2              15
 #endif
 // IN1  IN2   PWM   Mode
 //------------------------
