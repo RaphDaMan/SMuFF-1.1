@@ -102,7 +102,11 @@
 #endif
 
 #define DUET_SIG_FED_PIN    PC3     // THB (thermistor output pins will work fine up to 100Hz - see schematic)
-#define DUET_SIG_SEL_PIN    PA0     // TH0
+#if !defined(USE_DRYER)
+#define DUET_SIG_SEL_PIN    PA0      // TH0
+#else
+#define HEATER_TEMP_PIN     PA0      // TH0
+#endif
 
 #define DEBUG_OFF_PIN       0       
 

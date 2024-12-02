@@ -18,7 +18,10 @@
  */
 #pragma once
 
+#include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+
 #include <Arduino.h>
 #include "avr/dtostrf.h"
 #include "Config.h"
@@ -117,6 +120,8 @@ extern SdFat SD;
 #define USE_I2C
 #endif
 
+#include "AHTxx.h"
+
 #define FEEDER_SIGNAL           1
 #define SELECTOR_SIGNAL         2
 #define REVOLVER_SIGNAL         3
@@ -142,6 +147,9 @@ extern SdFat SD;
 
 #define FASTLED_UPDATE_FAST     50
 #define FASTLED_UPDATE_SLOW     750
+
+#define KELVIN                  273.15
+
 
 #if defined(__HW_DEBUG__) && defined(DEBUG_PIN)
 // used for internal hardware debugging only - will produce by default a 500Hz signal on the output pin
@@ -187,6 +195,7 @@ typedef struct {
   unsigned long serialBaudrates[4]                    = { 57600, 57600, 57600, 57600 };
   uint8_t       toolCount                             = 5;
   double        bowdenLength                          = 400.0f;
+  double        feedPercent                           = 0.9f;
   double        selectorDistance                      = 23.0f;
   double        selectorUnloadDist                    = 23.0f;
   uint8_t       i2cAddress                            = 0x58;
@@ -313,6 +322,29 @@ typedef struct {
   bool          autoRewind                            = true;
   bool          spoolDirCCW                           = true;
   uint16_t      i2cScanDelay                          = 10;
+  uint32_t      adc_Res                               = 1023;       // ADC resolution (10-Bit) 
+  uint32_t      adc_R1                                = 4700;       // value of on-board resistor for voltage divider (controller dependend)
+  float         thermistorBeta                        = 3950;       // Thermistor Beta value for NTC 3950
+  bool          thermistorUseBeta                     = false;      // whether or not to use Beta value for thermistor readings
+  uint32_t      thermistorR25                         = 100000;     // NTC resistor value at 25°C
+  float         shc_A                                 = 0.70335e-3; // Steinhart-Hart coefficient at: -10 °C
+  float         shc_B                                 = 2.17645e-4; // Steinhart-Hart coefficient at:  25 °C
+  float         shc_C                                 = 0.94971e-7; // Steinhart-Hart coefficient at: 200 °C
+  uint16_t      heaterMaxTemp                         = 120;
+  float         heaterDeltaMin                        = 0.1;        // min. temperature rise within 1 sec. while heating
+  float         heaterDeltaMax                        = 0.6;        // max. temperature rise within 1 sec. while heating
+  uint8_t       heaterDeltaErr                        = 5;          // max. amount of delta errors in a row
+  uint8_t       dryerFan1Speed                        = 0;
+  uint8_t       dryerFan2Speed                        = 0;
+  bool          dryerFan1Dyn                          = false;
+  bool          dryerFan2Dyn                          = false;
+  float         humidityLevels[4]                     = { 5, 10, 35, 55 };
+  uint8_t       humidityFanSpeeds[4]                  = { 0, 25, 50, 75 };
+  bool          logSensor1                            = false;
+  bool          logSensor2                            = false;
+  uint8_t       spinSpeed                             = 75;
+  uint16_t      spinDuration                          = 1000;
+  uint8_t       spinInterval                          = 25;
 } SMuFFConfig;
 
 extern SMuFFConfig              smuffConfig;
@@ -337,6 +369,8 @@ extern Servo                    servoLid;
 extern Servo                    servoCutter;
 #endif
 extern ZFan                     fan;
+extern ZFan                     fanDryer1;
+extern ZFan                     fanDryer2;
 extern ZEStopMux                splitterMux;
 
 #if defined(USE_LEONERD_DISPLAY)
@@ -366,11 +400,13 @@ extern double                   stepperPosClosed[];
 extern Adafruit_PWMServoDriver  motor1Pwm;
 extern Adafruit_PWMServoDriver  motor2Pwm;
 extern Adafruit_PWMServoDriver  motor3Pwm;
+extern Adafruit_PWMServoDriver  motor4Pwm;
 extern int8_t                   spoolMappings[];
 extern uint32_t                 spoolDuration[];
 extern bool                     spoolDirectionCCW[];
 #endif
 extern uint8_t                  spoolMotorsFound;
+extern uint8_t                  aht10SensorsFound;
 
 extern const char               brand[];
 extern uint8_t                  swapTools[];
@@ -379,11 +415,12 @@ extern volatile unsigned long   lastEncoderButtonTime;
 extern int8_t                   toolSelected;
 extern int8_t                   currentSerial;
 extern PositionMode             positionMode;
-extern String                   serialBuffer0, serialBuffer2, serialBuffer9, traceSerial2;
+extern String                   serialBuffer0, serialBuffer1, serialBuffer2, serialBuffer3, serialBuffer9, traceSerial2;
 extern char                     tuneStartup[];
 extern char                     tuneUser[];
 extern char                     tuneBeep[];
 extern char                     tuneLongBeep[];
+extern char                     tuneDryer[];
 extern char                     tuneEncoder[];
 extern bool                     displayingUserMessage;
 extern uint16_t                 userMessageTime;
@@ -435,11 +472,42 @@ extern uint32_t                 waitForDlgId;
 extern bool                     gotDlgId;
 extern uint8_t                  dlgButton;
 extern bool                     isListingFile;
+extern bool                     hasMultiservo;
+extern uint32_t                 lastEvent;
+extern _File*                   sensorLog;
 
 #ifdef HAS_TMC_SUPPORT
 extern TMC2209Stepper           *drivers[];
 #endif
 
+extern AHTxx                    aht1;
+extern AHTxx                    aht2;
+extern float                    humidity1, temp1;
+extern float                    humidity2, temp2;
+extern float                    heater1;
+extern float                    heater1prev, heater1delta;
+extern int                      dryerFan1Speed, dryerFan2Speed;
+extern bool                     dryerFan1Dynamic;
+extern bool                     hasDryerHeaterSensor;
+extern bool                     hasDryerHeater;
+extern bool                     heaterOverflow;
+extern bool                     isHeating;
+extern bool                     isHeaterOn;
+extern bool                     isHeaterSet;
+extern bool                     isHeaterTooSlow;
+extern uint32_t                 heaterTimeout;
+extern uint8_t                  heaterTargetTemp;
+extern uint8_t                  heaterDeltaErrors;
+extern uint32_t                 heaterEstimatedTime;
+extern uint32_t                 heaterShutdown;
+extern uint8_t                  flipTempHum;
+extern float                    heaterEstimatedDelta;
+extern float                    avgHeaterDelta;
+extern uint32_t                 avgHeaterDeltaSamples;
+extern bool                     intervalSpin[MAX_TOOLS];
+
+extern volatile byte            remainingSteppersFlag;
+extern volatile byte            startStepperIndex;
 
 #if defined(__STM32F1XX) || defined(__STM32F4XX) || defined(__STM32G0XX)
 extern void                     playTone(pin_t pin, int16_t frequency, int16_t duration);
@@ -461,6 +529,7 @@ extern void setupTMCDrivers();
 extern void setupServos();
 extern void setupSpoolMotors();
 extern void setupFan();
+extern void setupDryerFans();
 extern void setupEStopMux();
 extern void setupRelay();
 extern void setupI2C();
@@ -471,6 +540,8 @@ extern void setupBacklight();
 extern void setupDuetSignals();
 extern void setupDuetLaserSensor();
 extern void setupHBridge();
+extern void setupAHT10Sensors();
+extern void setupHeater();
 extern void initHwDebug();
 extern void initFastLED();
 extern void initUSB();
@@ -522,6 +593,7 @@ extern void longBeep(uint8_t count);
 extern void userBeep();
 extern void encoderBeep(uint8_t count);
 extern void startupBeep();
+extern void dryerBeep();
 extern void setSignalPort(uint8_t port, bool state);
 extern void signalNoTool();
 extern void signalDuetBusy();
@@ -553,6 +625,7 @@ extern bool readTmcConfig();
 extern bool readMaterials();
 extern bool readServoMapping();
 extern bool readRevolverMapping();
+extern bool readDryerConfig();
 extern bool writeConfig(Print* dumpTo = nullptr, bool useWebInterface = false);
 extern bool writeMainConfig(Print* dumpTo = nullptr, bool useWebInterface = false);
 extern bool writeSteppersConfig(Print* dumpTo = nullptr, bool useWebInterface = false);
@@ -562,11 +635,16 @@ extern bool writeMaterials(Print* dumpTo = nullptr, bool useWebInterface = false
 extern bool writeSwapTools(Print* dumpTo = nullptr, bool useWebInterface = false);
 extern bool writeRevolverMapping(Print* dumpTo = nullptr, bool useWebInterface = false);
 extern bool writefeedLoadState(Print* dumpTo = nullptr, bool useWebInterface = false);
+extern bool writeDryerConfig(Print* dumpTo = nullptr, bool useWebInterface = false);
+extern bool writeDebugLevel();
+extern bool writeSensorLog(_File* log, const char* data);
 extern bool deserializeSwapTools(const char* cfg);
 extern bool saveConfig(String& buffer);
 extern bool serializeTMCStats(Print* out, uint8_t axis, int8_t version, bool isStealth, uint16_t powerCfg, uint16_t powerRms, uint16_t microsteps, bool ms1, bool ms2, const char* uart, const char* diag, const char* ola, const char* olb, const char* s2ga, const char* s2gb, const char* ot_stat);
 extern _File* openCfgFileWrite(const char* filename);
 extern void closeCfgFile();
+extern _File* openLogFileWrite(const char* filename);
+extern void closeLogFile(_File* handle);
 extern bool checkAutoClose();
 extern void resetAutoClose();
 extern bool checkUserMessage();
@@ -615,6 +693,7 @@ extern void isrStallDetectedX();
 extern void isrStallDetectedY();
 extern void isrStallDetectedZ();
 extern void refreshStatus(bool feedOnly = false);
+extern void handlePeriodicals();
 extern void every10ms();
 extern void every20ms();
 extern void every50ms();
@@ -660,6 +739,7 @@ extern bool parse_Action(const String &buf, int8_t serial, char* errmsg);
 extern int  getParam(String buf, const char *token);
 extern long getParamL(String buf, const char *token);
 extern double getParamF(String buf, const char *token);
+extern double getParamF_Ex(String buf, const char *token);
 extern bool hasParam(String buf, const char *token);
 extern bool getParamString(String buf, const char *token, char *dest, int16_t bufLen);
 extern void prepStepping(int8_t index, long param, bool Millimeter = true, bool ignoreEndstop = false);
@@ -752,4 +832,13 @@ extern void windSpoolMotorCW(int8_t tool, uint8_t speed, uint16_t duration);
 extern void windSpoolMotorCCW(int8_t tool, uint8_t speed, uint16_t duration);
 extern void stopWindingSpoolMotor(int8_t tool);
 extern void testSpoolMotors();
-
+extern void readTempHumidity();
+extern float readHeaterTemp(pin_t pin, bool useBeta = false, bool useFahrenheit = false);
+extern void shutdownHeater();
+extern void startDryer(uint8_t temperature, uint32_t duration, uint8_t fan1, uint8_t fan2, bool fan1dyn = false);
+extern void stopDryer();
+extern void setHeater(bool on=false);
+extern void getHeaterTemp();
+extern void getHeaterDelta();
+extern void handleHeater();
+extern void handleDynamicFan();

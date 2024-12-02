@@ -31,6 +31,7 @@
 #define SD_READING_PURGES     6
 #define SD_READING_STEPPERS   7
 #define STAT_SCANNING_I2C     8
+#define SD_READING_DRYER      9
 
 const char P_MenuItemBack [] PROGMEM        = { "< BACK\n" };
 const char P_MenuItemSeparator [] PROGMEM   = { "\035\n"};
@@ -55,6 +56,7 @@ const char P_MnuDisplay [] PROGMEM          = { "display" };
 const char P_MnuSteppers [] PROGMEM         = { "steppers1" };
 const char P_MnuSteppersServo [] PROGMEM    = { "steppers0" };
 const char P_MnuPurge [] PROGMEM            = { "purge" };
+const char P_MnuDryer [] PROGMEM            = { "dryer" };
 
 const char P_OptColors [] PROGMEM           = { "colors" };
 const char P_OptPanelDue [] PROGMEM         = { "paneldue" };
@@ -92,13 +94,14 @@ const char P_CantUnloadDDE [] PROGMEM       = { "Can't unload DDE." };
 const char P_CheckUnit [] PROGMEM           = { "Please check unit!" };
 
 const char P_ConfigFail1 [] PROGMEM         = { "Config file is" };
+const char P_ConfigFail2 [] PROGMEM         = { "possibly corrupted,\nplease check!" };
+const char P_ConfigFail3 [] PROGMEM         = { "too big,\nplease reduce content!" };
+const char P_ConfigFail4 [] PROGMEM         = { "data inconsistent\nor memory failure!" };
 const char P_ConfigFail5 [] PROGMEM         = { "Materials file is" };
 const char P_ConfigFail6 [] PROGMEM         = { "TMC config file is" };
 const char P_ConfigFail7 [] PROGMEM         = { "ServoMap file is" };
 const char P_ConfigFail8 [] PROGMEM         = { "Steppers file is" };
-const char P_ConfigFail2 [] PROGMEM         = { "possibly corrupted,\nplease check!" };
-const char P_ConfigFail3 [] PROGMEM         = { "too big,\nplease reduce content!" };
-const char P_ConfigFail4 [] PROGMEM         = { "data inconsistent\nor memory failure!" };
+const char P_ConfigFail9 [] PROGMEM         = { "Dryer config file is" };
 
 const char P_ToolMenu [] PROGMEM            = { "Tool %d" };
 const char P_SwapMenu [] PROGMEM            = { "Slot %d: T%d" };
@@ -109,9 +112,9 @@ const char P_ToolMaterial [] PROGMEM        = { "Tool %d: %s, %d%%\n" };
 
 const char P_Selecting [] PROGMEM           = { "Selecting" };
 const char P_Wait [] PROGMEM                = { "please wait..." };
-const char P_Busy[] PROGMEM                 = { "BUSY " };
-const char P_Ready[] PROGMEM                = { "READY" };
-const char P_Jammed[] PROGMEM               = { "JAMMED" };
+const char P_Busy[] PROGMEM                 = { "BSY" };
+const char P_Ready[] PROGMEM                = { "RDY" };
+const char P_Jammed[] PROGMEM               = { "JAM" };
 const char P_Pemu[] PROGMEM                 = { "PMMU2" };
 const char P_Purging [] PROGMEM             = { "Purging" };
 const char P_PurgeLen [] PROGMEM            = { "%d%% = %smm" };
@@ -119,11 +122,16 @@ const char P_PurgeCubic [] PROGMEM          = { "(= %smm3)" };
 const char P_Usage [] PROGMEM               = { "USAGE:\n" };
 const char P_Upload [] PROGMEM              = { "Upload in Progress" };
 const char P_BytesRemain [] PROGMEM         = { "%ld %sBytes left" };
+const char P_Drying [] PROGMEM              = { "DRYING " };
+const char P_Heating [] PROGMEM             = { "HEAT-UP" };
+const char P_Cooling [] PROGMEM             = { "COOL-DN" };
 
 const char P_Off[] PROGMEM                  = { "OFF" };
 const char P_On[] PROGMEM                   = { "ON" };
 const char P_Yes[] PROGMEM                  = { "Yes" };
 const char P_No[] PROGMEM                   = { "No" };
+const char P_FilamentDryer[] PROGMEM        = { "Filament"};
+const char P_StopDryer[] PROGMEM            = { "Stop"};
 const char P_Unknown[] PROGMEM              = { "---" };
 const char P_Undefined[] PROGMEM            = { "???" };
 const char P_High[] PROGMEM                 = { "HIGH" };
@@ -147,6 +155,8 @@ const char P_InSteps[] PROGMEM              = { "in steps:" };
 const char P_InMilliAmpere[] PROGMEM        = { "in mA:" };
 const char P_InOhm[] PROGMEM                = { "in ohm:" };
 const char P_InBPM[] PROGMEM                = { "in BPM:" };
+const char P_InMinutes[] PROGMEM            = { "in minutes:" };
+const char P_InCelsius[] PROGMEM            = { "in celsius:" };
 const char P_LEDCount[] PROGMEM             = { "# of LED's:" };
 
 const char P_InValue[] PROGMEM              = { "as value:" };
@@ -168,6 +178,7 @@ const char P_Microsteps[] PROGMEM           = { "microsteps:" };
 const char P_Value[] PROGMEM                = { "value:" };
 const char P_MS3State[] PROGMEM             = { "state:" };
 
+
 const char P_M503S1[] PROGMEM               = { "\n/* Basic */\n" };
 const char P_M503S2[] PROGMEM               = { "\n/* Steppers */\n" };
 const char P_M503S3[] PROGMEM               = { "\n/* TMC Driver */\n" };
@@ -176,6 +187,7 @@ const char P_M503S5[] PROGMEM               = { "\n/* Materials */\n" };
 const char P_M503S6[] PROGMEM               = { "\n/* Tool swaps */\n" };
 const char P_M503S7[] PROGMEM               = { "\n/* Revolver mapping */\n" };
 const char P_M503S8[] PROGMEM               = { "\n/* Feed State */\n" };
+const char P_M503S9[] PROGMEM               = { "\n/* Dryer */\n" };
 
 const char P_ConfigWriteSuccess[] PROGMEM   = { "Config\nsuccessfully\nwritten!" };
 const char P_ConfigWriteFail[] PROGMEM      = { "Saving failed!\nPlease check SD-Card." };
@@ -204,6 +216,7 @@ const char P_SD_ReadingTmc[] PROGMEM        = { "TMC" };
 const char P_SD_ReadingServos[] PROGMEM     = { "Servos" };
 const char P_SD_ReadingPurges[] PROGMEM     = { "Purges" };
 const char P_SD_ReadingSteppers[] PROGMEM   = { "Steppers" };
+const char P_SD_ReadingDryer[] PROGMEM      = { "Dryer" };
 const char P_SD_InitError[] PROGMEM         = { "SD-Card not ready!" };
 const char P_SD_NoConfig[] PROGMEM          = { "No config file found!" };
 const char P_Scanning[] PROGMEM             = { "Scanning I2C #%d..." };
@@ -354,7 +367,20 @@ const char P_TMCKeyS2GA[] PROGMEM           = { "S2GA"};
 const char P_TMCKeyS2GB[] PROGMEM           = { "S2GB"};
 const char P_TMCKeyOT[] PROGMEM             = { "OT"};
 
+const char P_HeaterFailure[] PROGMEM        = { "** WARNING **\nHeater overflow\ndetected.\n\nPlease check!" };
+const char P_TempStatus[] PROGMEM           = { "Heater: %s °C %s\n" };
+const char P_TempOverflow[] PROGMEM         = { "*** OVERFLOW ***" };
+const char P_TempHumidityStatus[] PROGMEM   = { "AHT %d: %s °C, %s %% RH\n" };
+const char P_NoTempHumiditySensors[] PROGMEM= { "No temperatur/humidity sensors found!\n" };
+const char P_StartingDryer[] PROGMEM        = { "Starting Dryer at %d°C for %d minutes (%02d:%02d hours).\n" };
+const char P_StoppingDryer[] PROGMEM        = { "Stopping Dryer.\n" };
+const char P_NoDryerHeater[] PROGMEM        = { "No Dryer heater pin configured. Cancelling request.\n" };
+const char P_NoDryerConfigured[] PROGMEM    = { "Firmware has not\nbeen compiled for\nFilament Dryer.\n" };
+
+const char P_LogFormat[] PROGMEM            = { "%ld\tS%d\t%s°C\t%s%%\n" };
+
 // VT-100 Escape codes
+/*
 const char P_SendTermCls[] PROGMEM          = { "\033[2J" };
 const char P_SendTermAt[] PROGMEM           = { "\033[%d;%dH%s" };
 const char P_SendTermAttr[] PROGMEM         = { "\033[%dm" };
@@ -366,3 +392,4 @@ const char P_SendTermCsrShow[] PROGMEM      = { "\033[?25h" };
 const char P_SendTermScroll[] PROGMEM       = { "\0337\033[2;50r\0338" };
 
 const char P_SendTermStatus[] PROGMEM       = { "\0337\033[?25l\033[7m\033[H  \033[45m%s\033[40m%c F1: \033[45m%c\033[40m %c F2: \033[45m%c\033[40m %c \033[45m%s\033[40m %c RLY: \033[45m%s\033[40m %c DRVR: \033[45m%s  \033[40m %c PG: \033[45m%c\033[40m %c ST: \033[45m%c\033[40m %c \033[45m%s \033[0m\033[?25h\0338" };
+*/

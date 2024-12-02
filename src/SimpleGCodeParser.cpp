@@ -22,6 +22,8 @@
  */
 
 #include "SMuFF.h"
+#include <errno.h>
+#include <ArduinoJson.h>
 
 volatile bool parserBusy = false;
 volatile bool sendingResponse = false;
@@ -539,18 +541,82 @@ bool hasParam(String buf, const char* token) {
 int getParam(String buf, const char* token) {
   int16_t pos = findTokenPos(buf, token);
   if(pos != -1) {
-    //__debugS(D, PSTR("getParam:pos: %d"),pos);
+    //__debugS(D, PSTR("getParam: pos: %d"),pos);
     return atoi(buf.substring(pos+1).c_str());
   }
   else
     return -1;
 }
 
+// Remark: 
+//    This function replaces the now named getParamF_Ex
+//    to convert a string representation of a floating point value correctly
+//    because the STSTM libraries for converting floating point values seem
+//    to have a potential bug. Not all values were converted correctly.
+//    This function uses a work-around by utilizing the ArduinoJson library
+//    to get the correct conversion.
 double getParamF(String buf, const char* token) {
+  double val = -1;
   int16_t pos = findTokenPos(buf, token);
   if(pos != -1) {
-    //__debugS(D, PSTR("getParam:pos: %d"),pos);
-    return atof(buf.substring(pos+1).c_str());
+    // copy everything behind the 'F' token into a buffer
+    size_t l = buf.length()-pos+1;
+    char tmp[l+1];
+    memset(tmp, 0, l+1);
+    memcpy(tmp, buf.substring(pos+1).c_str(), l);
+    // find the end of the floating point value
+    for(int i=0; i< l; i++) {
+      if(tmp[i] == 0)
+        break;
+      // just for good measure, cut everything out that's not part of a floating point number
+      if((tmp[i] < '0' || tmp[i] > '9') && (tmp[i] < '+' || tmp[i] > '.') && tmp[i] != 'e' && tmp[i] != 'E') {
+        tmp[i] = 0;
+        break;
+      }
+    }
+    // Create a simple but valid JSON string
+    String json = "{\"v\": " + String(tmp) + "}";
+    __debugS(DEV3, PSTR("getParamF: %s"), json.c_str());
+
+    DynamicJsonDocument jsonDoc(50);
+    DeserializationError error = deserializeJson(jsonDoc, json);
+    if(error) {
+      __debugS(W, PSTR("getParamF: deserializeJson() failed with code %s"), error.c_str());
+    }
+    else {
+      val = jsonDoc[PSTR("v")];
+    }
+    jsonDoc.clear();
+  }
+  return val;
+}
+
+double getParamF_Ex(String buf, const char* token) {
+  int16_t pos = findTokenPos(buf, token);
+  if(pos != -1) {
+    // temporary attempt to fix failing floating point conversion on STM32G0B1
+    size_t l = buf.length()-pos+1;
+    char tmp[l+1];
+    memset(tmp, 0, l);
+    memcpy(tmp, buf.substring(pos+1).c_str(), l);
+    tmp[l+1] = 0;
+    for(int i=0; i< l; i++) {
+      if(tmp[i] == 0)
+        break;
+      // just for good measure, cut everything out that's not part of a floating point number
+      if((tmp[i] < '0' || tmp[i] > '9') && (tmp[i] < '+' || tmp[i] > '.') && tmp[i] != 'e' && tmp[i] != 'E') {
+        tmp[i] = 0;
+        break;
+      }
+    }
+    __debugS(D, PSTR("getParamF: copied to tmp: %s"), tmp);
+    char* valEnd;
+    double val = strtod(tmp, &valEnd);
+    //double val = (double)atof(buf.substring(pos+1).c_str());
+    __debugS(D, PSTR("getParamF: [S%s] %s errno: %d"), buf.substring(pos+1).c_str(), String(val, 15).c_str(), errno);
+    if(errno > 0)
+      return -1;
+    return val;
   }
   else
     return -1;
@@ -559,7 +625,7 @@ double getParamF(String buf, const char* token) {
 long getParamL(String buf, const char* token) {
   int16_t pos = findTokenPos(buf, token);
   if(pos != -1) {
-    //__debugS(D, PSTR("getParam:pos: %d"),pos);
+    //__debugS(D, PSTR("getParamL: pos: %d"),pos);
     return atol(buf.substring(pos+1).c_str());
   }
   else

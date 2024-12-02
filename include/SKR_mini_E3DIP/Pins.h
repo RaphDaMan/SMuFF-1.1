@@ -150,7 +150,7 @@
         #if !defined(USE_MULTISERVO_RELAY)
             #define RELAY_PIN       PA0         // use TH0 instead
         #else
-            #define RELAY_PIN       0           // or use Multiservo output 5 
+            #define RELAY_PIN       0           // or use Multiservo output 15 
         #endif
         // software I2C is being used on those pins
         #define ADASERVO_SCL        PB2         // Z-Axis DIR
@@ -161,6 +161,11 @@
 // moved to thermistor pins in V2.41
 #define DUET_SIG_FED_PIN    PC3         // THB (thermistor output pins will work fine up to 100Hz - see schematic)
 // #define DUET_SIG_SEL_PIN    PA0         // TH0 (not used on Duet but for relay in Multiservo mode)
+#if !defined(USE_DRYER)
+#define DUET_SIG_SEL_PIN    PA0      // TH0
+#else
+#define HEATER_TEMP_PIN     PA0      // TH0
+#endif
 
 #define DEBUG_OFF_PIN       0
 

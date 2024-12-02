@@ -1,0 +1,8 @@
+M141 Sn | Cn [Tn] [Fn] [F2n] [Dn]
+----------------------------
+Sn 		the target temperature, n=0 will stop the dryer (n: 0 | 30..200)
+Cn 		change the target temperature (n: 0 | 30..200)
+Tn 		the drying time in minutes; default = 60 (n: 10..720)
+Fn 		the fan speed of FAN1 in percent; default = 0 (n: 0..100)
+F2n 	the fan speed of FAN2 in percent; default = 0 (n: 0..100)
+Dn 		set fan speed of FAN1 dynamically based on humidity (n: 0 | 1)

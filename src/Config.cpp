@@ -107,6 +107,24 @@ void closeCfgFile() {
   cfgOut.close();
 }
 
+_File logOut;
+_File* openLogFileWrite(const char* filename) {
+  #if defined(USE_SDFAT)
+  if(logOut.open(filename, O_WRITE | O_CREAT)) {
+    return &logOut;
+  }
+  #else
+  if(logOut = SD.open(filename, FA_WRITE | FA_CREATE_ALWAYS)) {
+    return &logOut;
+  }
+  #endif
+  return nullptr;
+}
+
+void closeLogFile(_File* handle) {
+  handle->close();
+}
+
 uint8_t toolsMinMax(uint8_t toolCnt) {
   return (toolCnt > MIN_TOOLS && toolCnt <= MAX_TOOLS) ? toolCnt : 5;
 }
@@ -430,6 +448,14 @@ bool writeDebugLevel() {
   return false;
 }
 
+bool writeSensorLog(_File* log, const char* data) {
+  if(log != nullptr) {
+    log->print(data);
+    return true;
+  }
+  return false;
+}
+
 bool readConfig() {
 
   if(readMainConfig()) {
@@ -729,6 +755,63 @@ bool readMaterials() {
       }
 
       __debugS(D, PSTR("\treadMaterials:\t\tDONE (%lu bytes)"), jsonDoc.memoryUsage());
+      jsonDoc.clear();
+    }
+  }
+  return true;
+}
+
+/*
+  Reads configuration for the Dryer from SD-Card.
+*/
+bool readDryerConfig() {
+
+  if(!initSD())
+    return false;
+  //__debugS(D, PSTR("Trying to open Dryer config file '%s'"), DRYER_FILE);
+  _File cfg;
+  if(!__fopen(cfg, DRYER_FILE, FILE_READ)) {
+    showOpenFailed(&cfg, DRYER_FILE);
+    return false;
+  }
+  else {
+    if(!checkFileSize(&cfg, scapacity, P_ConfigFail9)) {
+      cfg.close();
+      return false;
+    }
+
+    DynamicJsonDocument jsonDoc(scapacity);       // use memory from heap to deserialize
+    DeserializationError error = deserializeJson(jsonDoc, cfg);
+    cfg.close();
+    if (error)
+      showDeserializeFailed(error, P_ConfigFail9);
+    else {
+      drawSDStatus(SD_READING_DRYER);
+      // read dryer configuration
+      smuffConfig.adc_Res         = jsonDoc[adcRes];
+      smuffConfig.adc_R1          = jsonDoc[adcR1];
+      smuffConfig.thermistorR25   = jsonDoc[thR25];
+      smuffConfig.thermistorBeta  = jsonDoc[thBeta];
+      smuffConfig.thermistorUseBeta = jsonDoc[thUseBeta];
+      smuffConfig.shc_A           = jsonDoc[shcA];
+      smuffConfig.shc_B           = jsonDoc[shcB];
+      smuffConfig.shc_C           = jsonDoc[shcC];
+      smuffConfig.heaterMaxTemp   = jsonDoc[htMaxTemp];
+      smuffConfig.heaterDeltaMin  = jsonDoc[htDeltaMin];
+      smuffConfig.heaterDeltaMax  = jsonDoc[htDeltaMax];
+      smuffConfig.heaterDeltaErr  = jsonDoc[htDeltaErr];
+      smuffConfig.logSensor1      = jsonDoc[logSensor1];
+      smuffConfig.logSensor2      = jsonDoc[logSensor2];
+
+      for(uint8_t i=0; i<4; i++) {
+        smuffConfig.humidityLevels[i] = jsonDoc[humidityLevels][i];
+        smuffConfig.humidityFanSpeeds[i] = jsonDoc[dynFanSpeeds][i];
+      }
+      smuffConfig.spinSpeed       = jsonDoc[spinSpeed];
+      smuffConfig.spinDuration    = jsonDoc[spinDuration];
+      smuffConfig.spinInterval    = jsonDoc[spinInterval];
+
+      __debugS(D, PSTR("\treadDryerConfig:\tDONE (%lu bytes)"), jsonDoc.memoryUsage());
       jsonDoc.clear();
     }
   }
@@ -1086,6 +1169,43 @@ bool writeMaterials(Print* dumpTo, bool useWebInterface) {
   }
   return dumpConfig(dumpTo, useWebInterface, MATERIALS_FILE, jsonDoc);
 }
+
+/*
+  Writes the Dryer configuration to SD-Card or Serial
+*/
+bool writeDryerConfig(Print* dumpTo, bool useWebInterface) {
+
+  if(dumpTo == nullptr) {
+    if(!initSD())
+      return false;
+  }
+
+  DynamicJsonDocument jsonDoc(capacity);
+  jsonDoc[adcRes]       = smuffConfig.adc_Res;
+  jsonDoc[adcR1]        = smuffConfig.adc_R1;
+  jsonDoc[thR25]        = smuffConfig.thermistorR25;
+  jsonDoc[thBeta]       = smuffConfig.thermistorBeta;
+  jsonDoc[thUseBeta]    = smuffConfig.thermistorUseBeta;
+  jsonDoc[shcA]         = smuffConfig.shc_A;
+  jsonDoc[shcB]         = smuffConfig.shc_B;
+  jsonDoc[shcC]         = smuffConfig.shc_C;
+  jsonDoc[htMaxTemp]    = smuffConfig.heaterMaxTemp;
+  jsonDoc[htDeltaMin]   = smuffConfig.heaterDeltaMin;
+  jsonDoc[htDeltaMax]   = smuffConfig.heaterDeltaMax;
+  jsonDoc[htDeltaErr]   = smuffConfig.heaterDeltaErr;
+  jsonDoc[logSensor1]   = smuffConfig.logSensor1;
+  jsonDoc[logSensor2]   = smuffConfig.logSensor2;
+  for(uint8_t i=0; i<4; i++) {
+    jsonDoc[humidityLevels][i] = smuffConfig.humidityLevels[i];
+    jsonDoc[dynFanSpeeds][i] = smuffConfig.humidityFanSpeeds[i];
+  }
+  jsonDoc[spinSpeed]    = smuffConfig.spinSpeed;
+  jsonDoc[spinDuration] = smuffConfig.spinDuration;
+  jsonDoc[spinInterval] = smuffConfig.spinInterval;
+
+  return dumpConfig(dumpTo, useWebInterface, nullptr, jsonDoc);
+}
+
 
 /*
   Writes tools swapping configuration.

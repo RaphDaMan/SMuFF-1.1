@@ -116,6 +116,10 @@
 #endif
 
 #define FAN_PIN             PC6     // FAN0
+#define FAN1_PIN            PC7     // FAN1 (Dryer)
+#define FAN2_PIN            PB15    // FAN2 (Dryer)
+#define HEATER_PIN          PC9     // HB-Heater (Dryer)
+#define HEATER2_PIN         PC8     // E0-Heater
 
 #define NEOPIXEL_TOOL_PIN   PA8     // for tools (NEOPIXEL)
 //#define NEOPIXEL_TOOL_PIN   PA9     // alternative for tools (EXT1.8); Important: _only_ usable with TWI / LEONERD display
@@ -149,7 +153,11 @@
 
 
 #define DUET_SIG_FED_PIN    PC4      // THB (thermistor output pins will work fine up to 100Hz - see schematic)
+#if !defined(USE_DRYER)
 #define DUET_SIG_SEL_PIN    PA0      // TH0
+#else
+#define HEATER_TEMP_PIN     PA0      // TH0
+#endif
 
 #define DEBUG_OFF_PIN       0
 

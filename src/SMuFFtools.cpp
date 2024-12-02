@@ -212,7 +212,7 @@ void switchFeederStepper(uint8_t stepper) {
   #endif
   smuffConfig.externalStepper = stepper == EXTERNAL;
   __debugS(DEV4, PSTR("%s set to \"%s\" state"), relay, smuffConfig.externalStepper ? P_External : P_Internal);
-  delay(150);   // gain the relay some time to debounce
+  delay(50);   // gain the relay some time to debounce
 }
 
 void moveFeeder(double distanceMM) {
@@ -444,8 +444,11 @@ bool feedToEndstop(char* errmsg, bool showMessage) {
   __debugS(DEV, PSTR("Feeding through fitting: %s mm"), String(smuffConfig.selectorDistance).c_str());
   prepSteppingRelMillimeter(FEEDER, smuffConfig.selectorDistance, false);
   runAndWait(FEEDER);
-  if(stat)
+  if(stat) {
     smuffConfig.feedLoadState[toolSelected] = LOADED_TO_SELECTOR;
+    steppers[FEEDER].setStepPositionMM(0);
+    steppers[FEEDER].setStepsTaken(0);
+  }
 
   sendStates(true);
   steppers[FEEDER].setIgnoreAbort(false);
@@ -609,15 +612,15 @@ bool feedToNozzle(char* errmsg, bool showMessage) {
     }
   }
   else {
-    double len = (smuffConfig.useSplitter ? smuffConfig.splitterDist : smuffConfig.bowdenLength) * .95;
+    double len = (smuffConfig.useSplitter ? smuffConfig.splitterDist : smuffConfig.bowdenLength) * smuffConfig.feedPercent;
     double remains = 0;
     steppers[FEEDER].setStepPositionMM(0);
-    // prepare 95% to feed full speed
+    // prepare to feed full speed
     do {
       #if !defined(USE_DDE)
-        __debugS(D, PSTR("Feeding to nozzle 95%% (%s mm)"), String(len).c_str());
+        __debugS(D, PSTR("Feeding to nozzle %d%% (%s mm)"), (uint8_t)((float)smuffConfig.feedPercent*100), String(len).c_str());
       #else
-        __debugS(D, PSTR("Feeding to DDE 95%% (%s mm)"), String(len).c_str());
+        __debugS(D, PSTR("Feeding to DDE %d%% (%s mm)"), (uint8_t)((float)smuffConfig.feedPercent*100), String(len).c_str());
       #endif
       prepSteppingRelMillimeter(FEEDER, len - remains, true);
       runAndWait(FEEDER);
@@ -627,6 +630,7 @@ bool feedToNozzle(char* errmsg, bool showMessage) {
         remains = steppers[FEEDER].getStepPositionMM();
         //__debugS(D, PSTR("Len: %s  Remain: %s  To go: %s"), String(len).c_str(), String(remains).c_str(), String(len - remains).c_str());
       }
+      /*
       #if !defined(USE_DDE)
         // check whether the 2nd endstop has triggered as well if configured to do so
         if (Z_END2_PIN > 0 && smuffConfig.useEndstop2 && stat) {
@@ -638,11 +642,13 @@ bool feedToNozzle(char* errmsg, bool showMessage) {
           }
         }
       #endif
+      */
     } while (!stat && retries > 0);
+    
     if (stat) {
       retries = FEED_ERROR_RETRIES;
       speed = smuffConfig.insertSpeed;
-      double len = (smuffConfig.useSplitter ? smuffConfig.splitterDist : smuffConfig.bowdenLength) * .05;
+      double len = (smuffConfig.useSplitter ? smuffConfig.splitterDist : smuffConfig.bowdenLength) * (1 - smuffConfig.feedPercent);
       double remains = 0;
       uint32_t timeout = 20000;
       steppers[FEEDER].setStepPositionMM(0);
@@ -663,38 +669,47 @@ bool feedToNozzle(char* errmsg, bool showMessage) {
           else
             smuffConfig.feedLoadState[toolSelected] = LOADED_TO_DDE;
         }
-      #else
       #endif
       sendStates(true);
-      // feed rest of it slowly
-      do {
-        __debugS(D, PSTR("Feeding to nozzle remaining 5%% (%s mm)"), String(len - remains).c_str());
-        changeFeederSpeed(speed);
-        changeDDEFeederSpeed(speed);
-        #if !defined (USE_DDE)
-          prepSteppingRelMillimeter(FEEDER, len - remains, true);
-          runAndWait(FEEDER);
-          // did the Feeder stall again?
-          stat = handleFeederStall(&speed, &retries);
-          smuffConfig.feedLoadState[toolSelected] = smuffConfig.useSplitter ? SPL_LOADED_TO_NOZZLE : LOADED_TO_NOZZLE;
-        #else
-          __debugS(D, PSTR("Feeding both extruders"));
-          steppers[FEEDER].setAllowAccel(false);
-          steppers[DDE_FEEDER].setAllowAccel(false);
-          steppers[DDE_FEEDER].setEnabled(true);
-          delay(250);
-          prepSteppingRelMillimeter(FEEDER, len - remains, true);
-          prepSteppingRelMillimeter(DDE_FEEDER, len - remains, false);
-          remainingSteppersFlag = _BV(FEEDER) | _BV(DDE_FEEDER);
-          runAndWait(-1);
-        #endif
-        if (!stat) {
-          remains = steppers[FEEDER].getStepPositionMM();
-          //__debugS(D, PSTR("Len: %s  Remain: %s  To go: %s"), String(len).c_str(), String(remains).c_str(), String(len - remains).c_str());
-        }
-      } while (!stat && retries > 0);
-      sendStates(true);
 
+      if(len > 0) {
+        // feed rest of it slowly (if there is a rest, ofc)
+        do {
+          __debugS(D, PSTR("Feeding to nozzle remaining %d%% (%s mm)"), (uint8_t)((float)(1 - smuffConfig.feedPercent)*100), String(len - remains).c_str());
+          changeFeederSpeed(speed);
+          changeDDEFeederSpeed(speed);
+          #if !defined (USE_DDE)
+            prepSteppingRelMillimeter(FEEDER, len - remains, true);
+            runAndWait(FEEDER);
+            // did the Feeder stall again?
+            stat = handleFeederStall(&speed, &retries);
+            smuffConfig.feedLoadState[toolSelected] = smuffConfig.useSplitter ? SPL_LOADED_TO_NOZZLE : LOADED_TO_NOZZLE;
+            
+            // check whether the 2nd endstop has triggered as well if configured to do so
+            if (Z_END2_PIN > 0 && smuffConfig.useEndstop2 && stat) {
+              if (!steppers[FEEDER].getEndstopHit(2)) {
+                remains = steppers[FEEDER].getStepPositionMM();
+                __debugS(D, PSTR("E-Stop2 failed. Len: %s  Remain: %s  To go: %s"), String(len).c_str(), String(remains).c_str(), String(len - remains).c_str());
+              }
+            }
+          #else
+            __debugS(D, PSTR("Feeding both extruders"));
+            steppers[FEEDER].setAllowAccel(false);
+            steppers[DDE_FEEDER].setAllowAccel(false);
+            steppers[DDE_FEEDER].setEnabled(true);
+            delay(250);
+            prepSteppingRelMillimeter(FEEDER, len - remains, true);
+            prepSteppingRelMillimeter(DDE_FEEDER, len - remains, false);
+            remainingSteppersFlag = _BV(FEEDER) | _BV(DDE_FEEDER);
+            runAndWait(-1);
+          #endif
+          if (!stat) {
+            remains = steppers[FEEDER].getStepPositionMM();
+            //__debugS(D, PSTR("Len: %s  Remain: %s  To go: %s"), String(len).c_str(), String(remains).c_str(), String(len - remains).c_str());
+          }
+        } while (!stat && retries > 0);
+        sendStates(true);
+      }
       // Purge DDE / feed to nozzle
       #if defined (USE_DDE)
         if(smuffConfig.reinforceLength > 0) {
@@ -1669,8 +1684,16 @@ void printPeriodicalState(int8_t serial) {
   const char *_triggered = "on";
   const char *_open = "off";
   int8_t tool = getToolSelected();
+  int t1 = (int)(temp1*10.0);
+  int t2 = (int)(temp2*10.0);
+  int h1 = (int)(humidity1*10.0);
+  int h2 = (int)(humidity2*10.0);
+  int ht1 = (int)(heater1*10.0);
+  int htt1 = (int)(heaterTargetTemp*10.0);
+  int df1 = dryerFan1Speed;
+  int df2 = dryerFan2Speed;
 
-  snprintf_P(tmp, ArraySize(tmp)-1, PSTR("echo: states: T: T%d\tS: %s\tR: %s\tF: %s\tF2: %s\tTMC: %c%s\tSD: %s\tSC: %s\tLID: %s\tI: %s\tSPL: %d\tRLY: %s\tJAM: %s\n"),
+  snprintf_P(tmp, ArraySize(tmp)-1, PSTR("echo: states: T: T%d\tS: %s\tR: %s\tF: %s\tF2: %s\tTMC: %c%s\tSD: %s\tSC: %s\tLID: %s\tI: %s\tSPL: %d\tRLY: %s\tJAM: %s\tTMP1: %d\tTMP2: %d\tHUM1: %d\tHUM2: %d\tHT1: %d\tHTT1: %d\tHON: %s\tTIM: %d\tDF1: %d\tDF2: %d\tHW: %s\n"),
             tool,
             selectorEndstop() ? _triggered : _open,
             revolverEndstop() ? _triggered : _open,
@@ -1684,7 +1707,18 @@ void printPeriodicalState(int8_t serial) {
             isIdle ? _triggered : _open,
             smuffConfig.feedLoadState[tool],
             smuffConfig.externalStepper ? "E" : "I",
-            feederJammed ? _triggered : _open
+            feederJammed ? _triggered : _open,
+            t1,
+            t2,
+            h1,
+            h2,
+            ht1,
+            htt1,
+            isHeaterOn ? _triggered : _open,
+            heaterTimeout,
+            df1,
+            df2,
+            heaterOverflow ? _triggered : _open
   );
   printResponse(tmp, serial);
 }
@@ -2130,8 +2164,11 @@ void printReport(const char* line, unsigned long loopCnt, unsigned long cmdCnt, 
       __log(s.c_str());
     }
     else {
-      debugSerial->print(PSTR("echo: testrun: "));
-      debugSerial->println(s.c_str());
+      if(!sendingResponse) {
+        debugSerial->flush();
+        debugSerial->print(PSTR("echo: testrun: "));
+        debugSerial->println(s.c_str());
+      }
     }
   }
 }
@@ -2208,21 +2245,21 @@ void testRun(const char *fname)
         showReport = false;
         checkSerialPending();
         #if !defined(USE_SERIAL_DISPLAY)
-        getInput(&turn, &btn, &isHeld, &isClicked, false);
-        if (isHeld || isClicked || !isTestrun)
-        {
-          break;
-        }
-        if (turn < 0)
-        {
-          if (--mode < 0)
-            mode = 3;
-        }
-        else if (turn > 0)
-        {
-          if (++mode > 3)
-            mode = 0;
-        }
+          getInput(&turn, &btn, &isHeld, &isClicked, false);
+          if (isHeld || isClicked || !isTestrun)
+          {
+            break;
+          }
+          if (turn < 0)
+          {
+            if (--mode < 0)
+              mode = 3;
+          }
+          else if (turn > 0)
+          {
+            if (++mode > 3)
+              mode = 0;
+          }
         #endif
         unsigned long secs = (millis() - startTime) / 1000;
         uint8_t n = getTestLine(&file, line, ArraySize(line));
@@ -2687,7 +2724,7 @@ void enumI2cDevices(uint8_t bus) {
       break;
 
     case 3:
-      #if defined(USE_MULTISERVO)
+      #if defined(USE_MULTISERVO) || defined(USE_DRYER)
         I2CBusMS.begin();
         deviceCnt = scanI2CLoop(&I2CBusMS, devs, ArraySize(devs), 3);
       #endif
@@ -2702,6 +2739,14 @@ void enumI2cDevices(uint8_t bus) {
       if (devs[i] == 0)
         break;
       switch (devs[i]) {
+        case I2C_AHT10_1_ADDRESS:
+          name = PSTR("1st Temp./Humidity sensor");
+          aht10SensorsFound++;
+          break;
+        case I2C_AHT10_2_ADDRESS:
+          name = PSTR("2nd Temp./Humidity sensor");
+          aht10SensorsFound++;
+          break;
         case I2C_ENCODER_ADDRESS:
           name = PSTR("Encoder");
           encoder = true;
@@ -2714,6 +2759,7 @@ void enumI2cDevices(uint8_t bus) {
         case I2C_SERVOBCAST_ADDRESS:
           name = PSTR("MultiServo");
           multiservo = true;
+          hasMultiservo = true;
           break;
         case I2C_EEPROM_ADDRESS:
           name = PSTR("EEPROM");
@@ -2732,6 +2778,10 @@ void enumI2cDevices(uint8_t bus) {
           break;
         case I2C_MOTORCTL3_ADDRESS:
           name = PSTR("3rd Spool-Motor Controller");
+          spoolMotorsFound++;
+          break;
+        case I2C_MOTORCTL4_ADDRESS:
+          name = PSTR("4th Spool-Motor Controller");
           spoolMotorsFound++;
           break;
         case I2C_SMUFF_WI_ADDRESS:
@@ -2773,6 +2823,20 @@ void enumI2cDevices(uint8_t bus) {
       __debugS(I, PSTR("Spool-Motors %s"), noDevFound);
     }
   #endif
+}
+
+void readTempHumidity() {
+#if defined(USE_DRYER)
+  // read temperature and relative humidity from sensors
+  if(aht10SensorsFound >= 1) {
+    humidity1 = aht1.readHumidity(true);
+    temp1 = aht1.readTemperature(false);
+  }
+  if(aht10SensorsFound >= 2) {
+    humidity2 = aht2.readHumidity(true);
+    temp2 = aht2.readTemperature(false);
+  }
+#endif
 }
 
 static char _dbg[1024];

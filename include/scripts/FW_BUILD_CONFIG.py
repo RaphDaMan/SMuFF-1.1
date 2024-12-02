@@ -89,7 +89,7 @@ col_tooltip = "#ffffff"
 dlg_font    = "{0}/assets/OpenSans-Regular.ttf"
 dlg_ffamily = "Open Sans"
 dlg_width   = 685
-dlg_height  = 605 if show_HWDBG else 570
+dlg_height  = 640 if show_HWDBG else 605
 
 txt_TITLE   = "SMuFF Firmware-Build Configurator"
 txt_ICON    = "{0}/assets/fwbc.ico"
@@ -102,6 +102,7 @@ txt_MSTWI   = "Use SW I2C for Multiservo"
 txt_SPMTWI  = "Use SW I2C for Spool-Rewinder"
 txt_SPMFW   = "Use FeatherWing DC-Motor controller"
 txt_SPM     = "Use Spool-Rewinder"
+txt_DRYER   = "Use Filament-Dryer (E3 3.0)"
 txt_SWD     = "Disable Debug Port (E3 DIP/2.0)"
 txt_DBG     = "Enable Debug Messages"
 txt_HWDBG   = "Enable HW Debugging"
@@ -141,6 +142,7 @@ txt_TTMS    = "Check this option if you're controlling the servos using an Adafr
 txt_TTSPM   = "Check this option if you're using the Motorized Spool-Rewinder."
 txt_TTSPMFW = "Check this option if you're using the FeatherWing instead of the Waveshare DC-Motor controller."
 txt_TTUSBID = "This is what Windows/Linux will show when connected to the SMuFF over USB."
+txt_TTDRYER = "Check this option if you'll be using the Filament-Dryer."
 
 dsp_last_ndx = -1
 dsp_option_names= [ "FYSETC / BTT / MKS Mini 12864 (HW SPI)", "Creality / BTT-TFT (Fast SW SPI)", "Creality / BTT-TFT (HW SPI)", "DIY OLED Module (I2C)", "LeoNerd's OLED Module (I2C)", "Full Graphics Display (HW SPI)", "Serial Only (No Display)" ]
@@ -154,6 +156,7 @@ msrly_option    = "USE_MULTISERVO_RELAY"
 mstwi_option    = "USE_PCA9685_SW_I2C"
 spm_option      = "USE_SPOOLMOTOR"
 spmfw_option    = "USE_SPOOLMOTOR_FEATHERWING"
+dryer_option    = "USE_DRYER"
 swd_option      = "DISABLE_DEBUG_PORT"
 dbg_option      = "DEBUG"
 hwdbg_option    = "__HW_DEBUG__"
@@ -170,6 +173,7 @@ usb_option      = "USB_PRODUCT_STRING"
 flash_option    = "FLASH_OFFSET"
 v5_option       = "SMUFF_V5"
 v6s_option      = "SMUFF_V6S"
+dryer_option    = "USE_DRYER"
 
 #===================================================
 # Custom Tkinter Dialog Section
@@ -313,6 +317,9 @@ def set_SPMTWI():
     else:
         chk_MSTWI.deselect()
 
+def set_DRYER():
+    change_define(chk_DRYER.get(), dryer_option, txt_DRYER)
+
 def set_SWD():
     change_define(chk_SWD.get(), swd_option, txt_SWD)
 
@@ -422,6 +429,7 @@ chk_MSTWI   = customtkinter.CTkCheckBox(master=frame1, text=txt_MSTWI,  command=
 chk_SPM     = customtkinter.CTkCheckBox(master=frame1, text=txt_SPM,    command=set_SPM,     font=fnt_text)
 chk_SPMTWI  = customtkinter.CTkCheckBox(master=frame1, text=txt_SPMTWI, command=set_SPMTWI,  font=fnt_text, state="disabled")
 chk_SPMFW   = customtkinter.CTkCheckBox(master=frame1, text=txt_SPMFW,  command=set_SPMFW,   font=fnt_text, state="disabled")
+chk_DRYER   = customtkinter.CTkCheckBox(master=frame1, text=txt_DRYER,  command=set_DRYER,   font=fnt_text)
 
 chk_SWD     = customtkinter.CTkCheckBox(master=frame2, text=txt_SWD,    command = set_SWD,   font=fnt_text)
 chk_DBG     = customtkinter.CTkCheckBox(master=frame2, text=txt_DBG,    command = set_DBG,   font=fnt_text)
@@ -455,6 +463,7 @@ tt_DDE      = CTkToolTip(chk_DDE,   message=txt_TTDDE,      font=fnt_tooltip, bg
 tt_NPX      = CTkToolTip(chk_NPX,   message=txt_TTNPX,      font=fnt_tooltip, bg_color=col_tooltip_bg, text_color=col_tooltip, follow=False, alpha=0.9, corner_radius=4, border_width=1)
 tt_MS       = CTkToolTip(chk_MS,    message=txt_TTMS,       font=fnt_tooltip, bg_color=col_tooltip_bg, text_color=col_tooltip, follow=False, alpha=0.9, corner_radius=4, border_width=1)
 tt_SPM      = CTkToolTip(chk_SPM,   message=txt_TTSPM,      font=fnt_tooltip, bg_color=col_tooltip_bg, text_color=col_tooltip, follow=False, alpha=0.9, corner_radius=4, border_width=1)
+tt_DRYER    = CTkToolTip(chk_DRYER, message=txt_TTDRYER,    font=fnt_tooltip, bg_color=col_tooltip_bg, text_color=col_tooltip, follow=False, alpha=0.9, corner_radius=4, border_width=1)
 tt_USBID    = CTkToolTip(lbl_USBID, message=txt_TTUSBID,    font=fnt_tooltip, bg_color=col_tooltip_bg, text_color=col_tooltip, follow=False, alpha=0.9, corner_radius=4, border_width=1)
 
 #
@@ -480,6 +489,7 @@ chk_MSRLY.grid  (row=9, column=0, padx=(40, 10), pady=(0, 8),  sticky="we")
 chk_SPM.grid    (row=10,column=0, padx=(10, 10), pady=(0, 8),  sticky="we")
 chk_SPMTWI.grid (row=11,column=0, padx=(40, 10), pady=(0, 8),  sticky="we")
 chk_SPMFW.grid  (row=12,column=0, padx=(40, 10), pady=(0, 8),  sticky="we")
+chk_DRYER.grid  (row=13,column=0, padx=(10, 10), pady=(0, 8),  sticky="we")
 
 # Controls in Frame 2
 lbl_OTH.grid    (row=0,  column=0, padx=(0, 0),   pady=(3, 6),  sticky="we")
@@ -567,6 +577,10 @@ def parse_build():
 
         if define == spmfw_option:
             chk_SPMFW.select()
+
+        if define == dryer_option:
+            chk_DRYER.select()
+            change_define(True, dryer_option, txt_DRYER)
 
         if define == zs_option:
             chk_MS.deselect()

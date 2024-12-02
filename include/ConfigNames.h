@@ -171,5 +171,28 @@ const char* spool PROGMEM              = "Spool";
 const char* autoRewind PROGMEM         = "AutoRewind";
 const char* dirCCW PROGMEM             = "CCW";
 
-
+const char* adcRes PROGMEM             = "ADC_Res";
+const char* adcR1 PROGMEM              = "ADC_R1";
+const char* thR25 PROGMEM              = "TH_R25";
+const char* thBeta PROGMEM             = "TH_Beta";
+const char* shcA PROGMEM               = "SHC_A";
+const char* shcB PROGMEM               = "SHC_B";
+const char* shcC PROGMEM               = "SHC_C";
+const char* fan1speed PROGMEM          = "Fan1Speed";
+const char* fan2speed PROGMEM          = "Fan2Speed";
+const char* fan1dyn PROGMEM            = "Fan1Dyn";
+const char* fan2dyn PROGMEM            = "Fan2Dyn";
+const char* htMaxTemp PROGMEM          = "HeaterMaxTemp";
+const char* htDeltaMin PROGMEM         = "HeaterDeltaMin";
+const char* htDeltaMax PROGMEM         = "HeaterDeltaMax";
+const char* htDeltaErr PROGMEM         = "HeaterDeltaErr";
+const char* thUseBeta PROGMEM          = "UseBeta";
+const char* humidityLevels PROGMEM     = "HumidityLevels";
+const char* dynFanSpeeds PROGMEM       = "DynFanSpeeds";
+const char* logSensor1 PROGMEM         = "LogSensor1";
+const char* logSensor2 PROGMEM         = "LogSensor2";
+const char* spinSpeed PROGMEM          = "SpinSpeed";
+const char* spinDuration PROGMEM       = "SpinDuration";
+const char* spinInterval PROGMEM       = "SpinInterval";
+const char* spinSpool PROGMEM          = "SpinSpool";
 

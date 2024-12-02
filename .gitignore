@@ -28,6 +28,7 @@ Schematics/SMuFF-Relay-Board/*.glb
 Schematics/SMuFF-Relay-Board/*.xml
 Schematics/SMuFF-Relay-Board/*.csv
 Schematics/SMuFF-Relay-Board/*.png
+Schematics/SMuFF-Relay-Board/CPL/*.csv
 Schematics/SMuFF-Relay-Board/Relay-Board-cache.lib
 Schematics/SMuFF-Relay-Board/Relay-Board.pro
 Schematics/SMuFF-Relay-Board/Relay-Board.sch
@@ -42,10 +43,26 @@ Schematics/SMuFF-Backbone/*.glb
 Schematics/SMuFF-Backbone/*.xml
 Schematics/SMuFF-Backbone/*.csv
 Schematics/SMuFF-Backbone/*-UART*
+Schematics/SMuFF-Backbone/*.zip
 Schematics/SMuFF-Backbone/Libraries
 Schematics/SMuFF-Backbone/Libraries.pretty/Logo.kicad_mod
 Schematics/SMuFF-Backbone/Libraries.pretty/*5x2mm*
-_autosave-*
+
+Schematics/SMuFF-Backbone R1/SMuFF-Backbone-backups/
+Schematics/SMuFF-Backbone R1/Gerber/
+Schematics/SMuFF-Backbone R1/*.wrl
+Schematics/SMuFF-Backbone R1/*.stl
+Schematics/SMuFF-Backbone R1/*.step
+Schematics/SMuFF-Backbone R1/*.em?
+Schematics/SMuFF-Backbone R1/*.glb
+Schematics/SMuFF-Backbone R1/*.xml
+Schematics/SMuFF-Backbone R1/*.csv
+Schematics/SMuFF-Backbone R1/*-UART*
+Schematics/SMuFF-Backbone R1/*.zip
+Schematics/SMuFF-Backbone R1/Libraries
+Schematics/SMuFF-Backbone R1/Libraries.pretty/Logo.kicad_mod
+Schematics/SMuFF-Backbone R1/Libraries.pretty/*5x2mm*
+
 Schematics/SMuFF-Connector/SMuFF-Connector/SMuFF-Connector-backups/
 Schematics/SMuFF-Connector/SMuFF-Connector/Gerber/
 Schematics/SMuFF-Connector/SMuFF-Connector/*.svg
@@ -65,7 +82,13 @@ Schematics/SMuFF-NeoPixel/SMuFF-NeoPixel-Board/*.glb
 Schematics/SMuFF-NeoPixel/SMuFF-NeoPixel-Board/*.xml
 Schematics/SMuFF-NeoPixel/SMuFF-NeoPixel-Board/*.csv
 
+pcbway_production*
+_autosave-*
+*auto_saved_files*
+*.lck
+
 temp/
+pyvenv-bak/
 
 include/SKR_mini_E3-2.0/Pins_X-Swap.h
 Schematics/SMuFF-Backbone/SMuFF-Backbone.zip

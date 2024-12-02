@@ -1,0 +1,3 @@
+M105 [Sn]
+-------
+Sn 		the sensor index to read temperature/humidity from (n: 1..2)

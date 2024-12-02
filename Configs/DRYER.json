@@ -1,0 +1,21 @@
+{
+  "ADC_Res": 1023,
+  "ADC_R1": 4700,
+  "TH_R25": 100000,
+  "TH_Beta": 3950.0,
+  "UseBeta": true,
+  "SHC_A": 0.70335e-3,
+  "SHC_B": 2.17645e-4,
+  "SHC_C": 0.94971e-7,
+  "HeaterMaxTemp": 150,
+  "HeaterDeltaMin": 0.25,
+  "HeaterDeltaMax": 2.0,
+  "HeaterDeltaErr": 10,
+  "HumidityLevels": [ 5.0, 10.0, 35.0, 55.0],
+  "DynFanSpeeds": [0, 25, 50 ,75],
+  "LogSensor1": true,
+  "LogSensor2": true,
+  "SpinSpeed": 75,
+  "SpinDuration": 1000,
+  "SpinInterval": 25
+}

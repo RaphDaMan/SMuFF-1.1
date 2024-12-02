@@ -44,7 +44,7 @@ For more information about building the SMuFF and some more detailed stuff, head
 
 ## Credit where credit is due
 
-A special thanks to the folks who have created the following (Arduino) libraries, on which the SMuFF firmware builds upon:
+A special thanks to the folks who have shared the following libraries/knowledge, on which the SMuFF firmware builds upon:
 
 + [Adafruit](https://github.com/technik-gegg/Adafruit-PWM-Servo-Driver-Library.git) for the PWM Servo library
 + [Benoît Blanchon](https://github.com/bblanchon/ArduinoJson.git) for the Arduino JSON library
@@ -54,10 +54,29 @@ A special thanks to the folks who have created the following (Arduino) libraries
 + [the creators of the](https://github.com/technik-gegg/SoftWireSTM32/) SoftWireSTM32 library
 + [Tom Schimansky](https://github.com/TomSchimansky/CustomTkinter) for the Custom Tkinter Python package
 + [Akash Bora](https://github.com/Akascape) for the CTkMessagebox and CTkToolTip packages
++ [Scott Campbell](https://www.circuitbasics.com/arduino-thermistor-temperature-sensor-tutorial/) for sharing his knowledge about Thermistor handling
 
 ---
 
 ## Recent changes
+
+**3.30** - Filament-Dryer integration
+
++ added fully functional Filament-Dryer (controller) by utilizing the Bed-Heater and Thermistor on the SKR E3 V3.0 board. Read all the details about this new feature [here](https://sites.google.com/view/the-smuff/how-to/build/the-filament-dryer). In order to use it, you have to compile the firmware with the *USE_DRYER* option and copy the new **dryer.mnu**, the updated **main{0-4}.mnu** files over to the *menus* folder and the **DRYER.json** file to the root folder of the SMuFFs SD-Card. Also copy the *help* folder to the SD-Card, since some GCodes were added/updated.
++ added GCode **M141** for controlling the new Filament-Dryer feature.
++ updated GCode **M106** in order to enable controlling fans 1 & 2 for the Filament-Dryer (will work only on SKR E3 V3.0).
+
+**3.29** - Integrated Heater functions / SMuFF-Backbone
+
++ added code to control the (Bed-) heater on the SKR E3 V3.0.
++ added some code changes needed for the [SMuFF-Backbone board](https://sites.google.com/view/the-smuff/how-to/build/the-smuff-backbone).
+
+**3.28** - minor changes
+
++ added option for 4th DC motor driver board (Waveshare/FeatherWing - for future use).
++ added option for up to two AHT-10 Temperature/Humidity sensor boards (for future use).
++ added GCode **M105** for reading out Temp./Humidity sensors.
++ refactored some of the code, i.e. moved code from SMuFF.cpp to own modules.
 
 **3.27** - minor bug fixes
 

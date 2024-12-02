@@ -55,7 +55,11 @@ void ZFan::setFan() {
   if(_tickCnt <= _pulseLen)
     setFanPin(HIGH);
   else {
-    if(_blipTimeout > 0 && _blipTime > _blipTimeout)
+    if(_blipTimeout > 0) {
+      if(_blipTime > _blipTimeout)
+        setFanPin(LOW);
+    }
+    else 
       setFanPin(LOW);
   }
   if(_tickCnt >= _maxSpeed) {

@@ -46,6 +46,9 @@ void readSequences() {
   if(readTune(LONGBEEP_FILE, tuneData, bufLen))
     strncpy(tuneLongBeep, tuneData, MAX_TUNE3);
 
+  if(readTune(DRYERBEEP_FILE, tuneData, bufLen))
+    strncpy(tuneDryer, tuneData, MAX_TUNE2);
+
 #if defined(USE_LEONERD_DISPLAY)
   if(readTune(ENCBEEPLEO_FILE, tuneData, bufLen))
     strncpy(tuneEncoder, tuneData, MAX_TUNE3);
@@ -283,27 +286,83 @@ void setupServos() {
 
 void setupSpoolMotors() {
   #if defined(USE_SPOOLMOTOR)
+  const char message[] PROGMEM = { "\tsetupSpoolMotors: %s motor oscilator freq.: %ld  PWM freq.: %s Hz" };
   double pwmFreq = 50.0;
   if(spoolMotorsFound >= 1) {
     motor1Pwm.begin();
     motor1Pwm.setOscillatorFrequency(PCA9685_FREQ_MOTOR1);  // see platformio.ini
     motor1Pwm.setPWMFreq(pwmFreq);
-    __debugS(DEV3, PSTR("\tsetupSpoolMotors: 1st motor oscilator freq.: %ld  PWM freq.: %s Hz"), PCA9685_FREQ, String((double)pwmFreq).c_str());
+    __debugS(DEV3, message, "1st" , PCA9685_FREQ, String((double)pwmFreq).c_str());
   }
   if(spoolMotorsFound >= 2) {
     motor2Pwm.begin();
     motor2Pwm.setOscillatorFrequency(PCA9685_FREQ_MOTOR2);  // see platformio.ini
     motor2Pwm.setPWMFreq(pwmFreq);
-    __debugS(DEV3, PSTR("\tsetupSpoolMotors: 2nd motor oscilator freq.: %ld  PWM freq.: %s Hz"), PCA9685_FREQ, String((double)pwmFreq).c_str());
+    __debugS(DEV3, message, "2nd" , PCA9685_FREQ, String((double)pwmFreq).c_str());
   }
   if(spoolMotorsFound >= 3) {
     motor3Pwm.begin();
     motor3Pwm.setOscillatorFrequency(PCA9685_FREQ_MOTOR3);  // see platformio.ini
     motor3Pwm.setPWMFreq(pwmFreq);
-    __debugS(DEV3, PSTR("\tsetupSpoolMotors: 2nd motor oscilator freq.: %ld  PWM freq.: %s Hz"), PCA9685_FREQ, String((double)pwmFreq).c_str());
+    __debugS(DEV3, message, "3rd" , PCA9685_FREQ, String((double)pwmFreq).c_str());
+  }
+  if(spoolMotorsFound >= 4) {
+    motor4Pwm.begin();
+    motor4Pwm.setOscillatorFrequency(PCA9685_FREQ_MOTOR4);  // see platformio.ini
+    motor4Pwm.setPWMFreq(pwmFreq);
+    __debugS(DEV3, message, "4th" , PCA9685_FREQ, String((double)pwmFreq).c_str());
   }
   __debugS(D, PSTR("\tsetupSpoolMotors: %2d Spool-Motor%s initialized"), spoolMotorsFound, spoolMotorsFound > 1 ? "s" : "");
   #endif
+}
+
+void setupAHT10Sensors() {
+#if defined(USE_DRYER)
+  const char message[] PROGMEM = { "\tsetupAHT10Sensors: %s AHT-10 sensor init %s" };
+  if(aht10SensorsFound >= 1) {
+    if (aht1.begin()) {
+      __debugS(DEV3, message, "1st", "done.");
+    }
+    else {
+      __debugS(W, message, "1st", "failed!");
+    }
+  }
+  if(aht10SensorsFound >= 2) {
+    if (aht2.begin()) {
+      __debugS(DEV3, message, "2nd", "done.");
+    }
+    else {
+      __debugS(W, message, "1st", "failed!");
+    }
+  }
+  if(aht10SensorsFound > 0) {
+    readTempHumidity();
+  }
+#endif
+}
+
+void setupHeater() {
+  // for future use
+#if defined(USE_DRYER)
+  #if defined(HEATER_TEMP_PIN) && HEATER_TEMP_PIN > 0
+    pinMode(HEATER_TEMP_PIN, INPUT);
+    hasDryerHeaterSensor = true;
+    heater1 = readHeaterTemp(HEATER_TEMP_PIN, smuffConfig.thermistorUseBeta);
+    heater1prev = heater1;
+  #else
+    __debugS(W, PSTR("setupHeater: Heater temperature sensor pin not defined!"));
+  #endif
+  #if defined(HEATER_PIN) && HEATER_PIN > 0
+    // can't use heater without temp. sensor
+    if(hasDryerHeaterSensor) {
+      pinMode(HEATER_PIN, OUTPUT);
+      hasDryerHeater = true;
+    }
+  #else
+    __debugS(W, PSTR("setupHeater: Heater MOSFET pin not defined!"));
+    hasDryerHeater = false;
+  #endif
+#endif
 }
 
 void setupFan() {
@@ -326,6 +385,33 @@ void setupFan() {
       }
   }
   //__debugS(D, PSTR("setupFan: DONE"));
+}
+
+void setupDryerFans() {
+  // *************************************************
+  // this is supported only on the SKR E3-V3!
+  // *************************************************
+#if defined(USE_DRYER)
+  #if defined(FAN1_PIN) && FAN1_PIN > 0
+    #if defined(__STM32F1XX) || defined(__STM32F4XX) || defined(__STM32G0XX)
+      fanDryer1.attach(FAN1_PIN, 1);
+      fanDryer1.setTickRes(FAN_RESOLUTION);
+      fanDryer1.setPulseWidthMax((uint16_t(((double)1/FAN_FREQUENCY)*1000000L)));
+    #else
+      pinMode(FAN1_PIN, OUTPUT);
+    #endif
+  #endif
+  #if defined(FAN2_PIN) && FAN2_PIN > 0
+    #if defined(__STM32F1XX) || defined(__STM32F4XX) || defined(__STM32G0XX)
+      fanDryer2.attach(FAN2_PIN, 2);
+      fanDryer2.setTickRes(FAN_RESOLUTION);
+      fanDryer2.setPulseWidthMax((uint16_t(((double)1/FAN_FREQUENCY)*1000000L)));
+    #else
+      pinMode(FAN2_PIN, OUTPUT);
+    #endif
+  #endif
+  //__debugS(D, PSTR("setupDryerFans: DONE"));
+#endif
 }
 
 void setupEStopMux() {

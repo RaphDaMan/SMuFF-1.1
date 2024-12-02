@@ -22,7 +22,7 @@
 #include <Arduino.h>
 #include "Config.h"
 
-#define MAX_FANS                2
+#define MAX_FANS                5
 #define FAN_DUTY_CYCLE          10000    // fan cycle in uS (100Hz by default)
 
 #include "Debug.h"
@@ -47,6 +47,7 @@ public:
   uint16_t getTickRes() { return _tickRes; }
   void    setBlipTimeout(uint16_t millis) { _blipTimeout = (uint32_t)millis * 1000; }
   uint16_t getBlipTimeout() { return (uint16_t)_blipTimeout / 1000; }
+  uint8_t getSpeed() { return _speed; }
 
 private:
   pin_t     _pin;

@@ -86,7 +86,6 @@ GCodeFunctions gCodeFuncsM[] PROGMEM = {
     {80, dummy},
     {81, dummy},
     {104, dummy},
-    {105, dummy},
     {108, dummy},
     {109, dummy},
     {220, dummy},
@@ -103,6 +102,7 @@ GCodeFunctions gCodeFuncsM[] PROGMEM = {
     {84, M18},
     {98, M98},
     {100, M100},
+    {105, M105},
     {106, M106},
     {107, M107},
     {110, M110},
@@ -113,6 +113,7 @@ GCodeFunctions gCodeFuncsM[] PROGMEM = {
     {118, M118},
     {119, M119},
     {122, M122},
+    {141, M141},
     {145, M145},
     {150, M150},
     {155, M155},
@@ -492,39 +493,151 @@ bool M100(const char *msg, String buf, int8_t serial, char* errmsg)
   return true;
 }
 
+bool M105(const char *msg, String buf, int8_t serial, char* errmsg)
+{
+  int sensorIndex = 0;
+  char tmp[50];
+  char bufT1[10], bufRH1[10], bufT2[10], bufRH2[10], bufHT1[10];
+
+  printResponse(msg, serial);
+  if ((param = getParam(buf, S_Param)) == -1)
+    sensorIndex = (int)param;
+
+  readTempHumidity();
+  dtostrf(temp1,      3, 1, bufT1);
+  dtostrf(temp2,      3, 1, bufT2);
+  dtostrf(humidity1,  2, 1, bufRH1);
+  dtostrf(humidity2,  2, 1, bufRH2);
+  dtostrf(heater1,    3, 1, bufHT1);
+
+  if(hasDryerHeaterSensor) {
+    snprintf_P(tmp, ArraySize(tmp)-1, P_TempStatus, bufHT1, heaterOverflow ? P_TempOverflow : "");
+    printResponse(tmp, serial);
+  }
+  if(aht10SensorsFound >= 1 && sensorIndex != 2) {
+    snprintf_P(tmp, ArraySize(tmp)-1, P_TempHumidityStatus, 1, bufT1, bufRH1);
+    printResponse(tmp, serial);
+  }
+  else if(aht10SensorsFound >= 2 && sensorIndex != 1) {
+    snprintf_P(tmp, ArraySize(tmp)-1, P_TempHumidityStatus, 2, bufT2, bufRH2);
+    printResponse(tmp, serial);
+  }
+  else if(aht10SensorsFound == 0) {
+    printResponseP(P_NoTempHumiditySensors, serial);
+  }
+  return true;
+}
+
 bool M106(const char *msg, String buf, int8_t serial, char* errmsg)
 {
   int freq = 0;
+  int index = 0;
+  int speed = 0;
+  bool hasSpeed = hasParam(buf, S_Param);
+  bool hasDynamic = hasParam(buf, D_Param);
+  bool hasFrequency = hasParam(buf, F_Param);
+
   printResponse(msg, serial);
-  if ((param = getParam(buf, S_Param)) == -1)
+  if ((speed = getParam(buf, S_Param)) == -1)
   {
-    param = 100;
+    speed = 100;
   }
   if ((freq = getParam(buf, F_Param)) == -1)
   {
     freq = 0;
   }
-  //__debugS(I, PSTR("Fan speed: %d%%"), param);
+  if ((index = getParam(buf, I_Param)) == -1)
+  {
+    index = 0;
+  }
+  //__debugS(I, PSTR("Fan %d speed: %d%%; freq: %d"), index, speed, freq);
   #if defined(__STM32F1XX) || defined(__STM32F4XX) || defined(__STM32G0XX)
-    // set the frequency if applied
-    if(freq > 0 && freq <= 500) {
-      uint16_t max = (uint16_t)(uint32_t(((double)1/freq)*1000000L));
-      fan.setPulseWidthMax(max);
+    ZFan *fanInst;
+    switch(index) {
+      case 1:
+        fanInst = &fanDryer1;
+        if(hasSpeed)
+          dryerFan1Speed = speed;
+        dryerFan1Dynamic = hasDynamic;
+        break;
+      case 2:
+        fanInst = &fanDryer2;
+        if(hasSpeed)
+          dryerFan2Speed = speed;
+        break;
+      default:
+        fanInst = &fan;
+        break;
     }
-    fan.setFanSpeed(param);
+
+    // set the frequency if applied
+    if(freq > 0 && freq <= 500 && hasFrequency) {
+      uint16_t max = (uint16_t)(uint32_t(((double)1/freq)*1000000L));
+      fanInst->setPulseWidthMax(max);
+    }
+    if(hasSpeed)
+      fanInst->setFanSpeed(speed);
   #else
-    analogWrite(FAN_PIN, map(param, 0, 100, 0, 255));
+    pint_t pin;
+    switch(index) {
+      case 1:
+        pin = FAN1_PIN;
+        break;
+      case 2:
+        pin = FAN2_PIN;
+        break;
+      default:
+        pin = FAN_PIN;
+        break;
+    }
+    if(pin > 0)
+      if(hasSpeed)
+        analogWrite(pin, map(speed, 0, 100, 0, 255));
   #endif
   return true;
 }
 
 bool M107(const char *msg, String buf, int8_t serial, char* errmsg)
 {
+  int index = 0;
   printResponse(msg, serial);
+  if ((index = getParam(buf, I_Param)) == -1)
+  {
+    index = 0;
+  }
+  //__debugS(I, PSTR("Fan speed: %d%%"), param);
+
   #if defined(__STM32F1XX) || defined(__STM32F4XX) || defined(__STM32G0XX)
-    fan.setFanSpeed(0);
+    ZFan *fanInst;
+    switch(index) {
+      case 1:
+        fanInst = &fanDryer1;
+        dryerFan1Speed = 0;
+        break;
+      case 2:
+        fanInst = &fanDryer2;
+        dryerFan2Speed = 0;
+        break;
+      default:
+        fanInst = &fan;
+        break;
+    }
+    fanInst->setFanSpeed(0);
   #else
-    analogWrite(FAN_PIN, 0);
+    pint_t pin;
+    switch(index) {
+      case 1:
+        pin = FAN1_PIN;
+        break;
+      case 2:
+        pin = FAN2_PIN;
+        break;
+      default:
+        pin = FAN_PIN;
+        break;
+    }
+    if(pin > 0)
+      analogWrite(pin, 0);
   #endif
   return true;
 }
@@ -635,6 +748,9 @@ bool M115(const char *msg, String buf, int8_t serial, char* errmsg)
   strcat(options, "|V6S");
 #else
 #define SMUFF_MODE  "SMuFF"
+#endif
+#if defined(USE_DRYER)
+  strcat(options, "|DRYER");
 #endif
   sprintf_P(tmp, P_GVersion, ver, BOARD_INFO, VERSION_DATE, smuffConfig.prusaMMU2 ? "PMMU" : SMUFF_MODE, options);
   printResponse(tmp, serial);
@@ -1221,6 +1337,82 @@ bool M122(const char *msg, String buf, int8_t serial, char* errmsg)
 #endif
 }
 
+bool M141(const char *msg, String buf, int8_t serial, char* errmsg)
+{
+  char tmp[100];
+  bool stat = false;
+  uint8_t targetTemp = 0;
+  uint32_t duration = 60;
+  uint8_t fan1 = 0, fan2 = 0;
+  uint8_t fan1dyn = 0;
+
+  printResponse(msg, serial);
+  if(!hasDryerHeater) {
+    sprintf_P(tmp, P_NoDryerHeater);
+    printResponse(tmp, serial);
+    return false;
+  }
+  
+  if ((param = getParam(buf, C_Param)) != -1) {
+    if(param < 30 || param > smuffConfig.heaterMaxTemp) {
+      rangeError(30, smuffConfig.heaterMaxTemp, errmsg);
+      return false;
+    }
+    else {
+      // only target temp. has changed
+      heaterTargetTemp = (uint32_t)param;
+      isHeaterSet = false;
+    }
+    return true;
+  }
+
+  if ((param = getParam(buf, S_Param)) != -1) {
+    if(param == 0) {
+      sprintf_P(tmp, P_StoppingDryer);
+      printResponse(tmp, serial);
+      stopDryer();
+      return true;
+    }
+    if(param < 30 || param > smuffConfig.heaterMaxTemp) {
+      rangeError(30, smuffConfig.heaterMaxTemp, errmsg);
+    }
+    else {
+      targetTemp = (uint32_t)param;
+      stat = true;
+    }
+
+    if ((param = getParam(buf, T_Param)) != -1) {
+      if(param > 0 && param <= 720)
+        duration = param;
+    }
+
+    if ((param = getParam(buf, F_Param)) != -1) {
+      if(param > 0 && param <= 100) {
+        fan1 = param;
+      }
+      if(param > 2000 && param <= 2100) {
+        fan2 = param-2000;
+      }
+    }
+    if ((param = getParam(buf, D_Param)) != -1) {
+      if(param >= 0 && param <= 1)
+        fan1dyn = param;
+    }
+
+    if(stat) {
+      uint8_t tHours = duration / 60;
+      uint8_t tMinutes = duration % 60;
+      snprintf_P(tmp, ArraySize(tmp)-1,P_StartingDryer, targetTemp, duration, tHours, tMinutes);
+      printResponse(tmp, serial);
+      startDryer(targetTemp, duration*60, fan1, fan2, fan1dyn == 1);
+    }
+  }
+  else {
+    missingParamError(S_Param, errmsg);
+  }
+  return stat;
+}
+
 bool M145(const char *msg, String buf, int8_t serial, char* errmsg)
 {
   char color[50];
@@ -1548,6 +1740,7 @@ bool M205(const char *msg, String buf, int8_t serial, char* errmsg) {
   char cmd[80];
   char tmp[50];
   char strpar[40];
+  char fParamBuf[20];
   memset(strpar, 0, ArraySize(strpar));
   if (getParamString(buf, P_Param, cmd, ArraySize(cmd))) {
     int8_t axis = -1;
@@ -1557,12 +1750,13 @@ bool M205(const char *msg, String buf, int8_t serial, char* errmsg) {
     if (hasParam(buf, Y_Param)) { axis = REVOLVER; stallPin = STALL_Y_PIN; }
     if (hasParam(buf, Z_Param)) { axis = FEEDER;   stallPin = STALL_Z_PIN; }
     if (hasParam(buf, M_Param)) { pinmode = getParam(buf, M_Param); }
-    int   index = getParam(buf, I_Param);
-    bool  paramS = getParamString(buf, S_Param, strpar, ArraySize(strpar));
-    double fParam = getParamF(buf, S_Param);
-    param = getParam(buf, S_Param);
+    int     index  = getParam(buf, I_Param);
+    bool    paramS = getParamString(buf, S_Param, strpar, ArraySize(strpar));
+    double  fParam = getParamF(buf, S_Param);
+            param  = getParam(buf, S_Param);
 
-    __debugS(DEV3, "Params: %d | %f | S:'%s', I:%d, M:%d", param, fParam, paramS ? strpar : "", index, pinmode);
+    dtostrf(fParam, 6, 12, fParamBuf);
+    __debugS(DEV3, "Params: %d [Int] | %s [Float] | S:'%s', I:%d, M:%d", param, fParamBuf, paramS ? strpar : "", index, pinmode);
     if(paramS) {
       if (strcmp(cmd, wipeSequence) == 0)           { strncpy(smuffConfig.wipeSequence, strpar, ArraySize(smuffConfig.wipeSequence)); }
       else if (strcmp(cmd, material) == 0)          { if (index != -1) strncpy(smuffConfig.materials[index], strpar, MAX_MATERIAL_LEN); else { stat = false; materialError(errmsg); } }
@@ -1699,11 +1893,35 @@ bool M205(const char *msg, String buf, int8_t serial, char* errmsg) {
       else if (strcmp(cmd, user1) == 0)               { /* ignore this */ }
       else if (strcmp(cmd, user2) == 0)               { /* ignore this */ }
       #endif
+      
       #if defined(USE_SPOOLMOTOR)
       else if (strcmp(cmd, autoRewind) == 0)          { smuffConfig.autoRewind = (param > 0); }
       else if (strcmp(cmd, spool) == 0)               { if(index != -1) spoolMappings[index] = (int8_t) param; }
       else if (strcmp(cmd, spoolSpeed) == 0)          { if(param > 0 && param < 256) { smuffConfig.spoolRewindSpeed = (uint8_t) param; } else { rangeError(1, 255, errmsg); stat = false; } }
       else if (strcmp(cmd, dirCCW) == 0)              { if(index != -1) spoolDirectionCCW[index] = (param > 0); else { stat = false; materialError(errmsg); } }
+      #endif
+      
+      #if defined(USE_DRYER)
+      else if (strcmp(cmd, adcRes) == 0)              { if(param == 1023 || param == 4095) smuffConfig.adc_Res = (uint32_t)param; else { stat = false; rangeError(1023, 4095, errmsg); } }
+      else if (strcmp(cmd, adcR1) == 0)               { if(param > 1000 && param <= 10000) smuffConfig.adc_R1 = (uint32_t)param; else { stat = false; rangeError(1000, 10000, errmsg); } }
+      else if (strcmp(cmd, thBeta) == 0)              { if(param > 0 && param <= 10000) smuffConfig.thermistorBeta = (float)param; else { stat = false; rangeError(1, 10000, errmsg); } }
+      else if (strcmp(cmd, thR25) == 0)               { if(param >= 10000 && param <= 200000) smuffConfig.thermistorR25 = (uint32_t)param; else { stat = false; rangeError(10000, 200000, errmsg); } }
+      else if (strcmp(cmd, shcA) == 0)                { if(fParam >= 0 && fParam <= 100) smuffConfig.shc_A = fParam; else { stat = false; rangeError(0.0, 100.0, errmsg); } }
+      else if (strcmp(cmd, shcB) == 0)                { if(fParam >= 0 && fParam <= 100) smuffConfig.shc_B = fParam; else { stat = false; rangeError(0.0, 100.0, errmsg); } }
+      else if (strcmp(cmd, shcC) == 0)                { if(fParam >= 0 && fParam <= 100) smuffConfig.shc_C = fParam; else { stat = false; rangeError(0.0, 100.0, errmsg); } }
+      else if (strcmp(cmd, htMaxTemp) == 0)           { if(param > 1 && param <= 200) smuffConfig.heaterMaxTemp = param; else { stat = false; rangeError(1, 200, errmsg); } }
+      else if (strcmp(cmd, htDeltaMin) == 0)          { if(fParam <= 1.0) smuffConfig.heaterDeltaMin = fParam; else { stat = false; rangeError(0.0, 1.0, errmsg); } }
+      else if (strcmp(cmd, htDeltaMax) == 0)          { if(fParam <= 3.0) smuffConfig.heaterDeltaMax = fParam; else { stat = false; rangeError(0.0, 3.0, errmsg); } }
+      else if (strcmp(cmd, htDeltaErr) == 0)          { if(param > 0 && param <= 50) smuffConfig.heaterDeltaErr = (uint8_t)param; else { stat = false; rangeError(0, 50, errmsg); } }
+      else if (strcmp(cmd, thUseBeta) == 0)           { smuffConfig.thermistorUseBeta = (param > 0); }
+      else if (strcmp(cmd, logSensor1) == 0)          { smuffConfig.logSensor1 = (param > 0); }
+      else if (strcmp(cmd, logSensor2) == 0)          { smuffConfig.logSensor2 = (param > 0); }
+      else if (strcmp(cmd, humidityLevels) == 0)      { if(index >= 0 && index <= 3) { if(fParam >= 0 && fParam <= 100) smuffConfig.humidityLevels[index] = fParam; else { stat = false; rangeError(0, 100, errmsg); } } else { stat = false; rangeError(0, 3, errmsg); } }
+      else if (strcmp(cmd, dynFanSpeeds) == 0)        { if(index >= 0 && index <= 3) { if(param >= 0 && param <= 100) smuffConfig.humidityFanSpeeds[index] = (uint8_t)param; else { stat = false; rangeError(0, 100, errmsg); } } else { stat = false; rangeError(0, 3, errmsg); } }
+      else if (strcmp(cmd, spinSpool) == 0)           { if(index >= 0 && index < MAX_TOOLS) intervalSpin[(uint8_t)index] = (param > 0); else { stat = false; toolError(errmsg); } }
+      else if (strcmp(cmd, spinSpeed) == 0)           { if(param >= 10 && param <= 255) smuffConfig.spinSpeed = (uint8_t)param; else { stat = false; rangeError(10, 255, errmsg); } }
+      else if (strcmp(cmd, spinDuration) == 0)        { if(param >= 50 && param <= 3000) smuffConfig.spinDuration = (uint16_t)param; else { stat = false; rangeError(50, 3000, errmsg); } }
+      else if (strcmp(cmd, spinInterval) == 0)        { if(param >= 10 && param <= 250) smuffConfig.spinInterval = (uint8_t)param; else { stat = false; rangeError(10, 250, errmsg); } }
       #endif
       else {
         snprintf_P(errmsg, MAX_ERR_MSG, P_UnknownParam, cmd);
@@ -2305,6 +2523,10 @@ bool M503(const char *msg, String buf, int8_t serial, char* errmsg)
   if (part == 0 || part == 8) {
     printResponseP(P_M503S8, serial);
     writefeedLoadState(_print, useWI);
+  }
+  if (part == 0 || part == 9) {
+    printResponseP(P_M503S9, serial);
+    writeDryerConfig(_print, useWI);
   }
   printResponseP(PSTR("\n"), serial);
   return true;

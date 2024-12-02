@@ -26,10 +26,10 @@ typedef uint8_t     pin_t;
 typedef uint32_t    pin_t;
 #endif
 
-#define VERSION_STRING    "V3.27"
+#define VERSION_STRING    "V3.30"
 #define PMMU_VERSION      106               // Version number for Prusa MMU2 Emulation mode
 #define PMMU_BUILD        372               // Build number for Prusa MMU2 Emulation mode
-#define VERSION_DATE      "2024-08-28"
+#define VERSION_DATE      "2024-10-06"
 #define DEBUG_FILE        "/debug.txt"
 #define DEBUG_USB         "/dbg2usb.txt"    // send debug messages to USB port (Serial 0)
 #define DEBUG_EXP         "/dbg2exp.txt"    // send debug messages to EXP port (Serial 1)
@@ -41,11 +41,14 @@ typedef uint32_t    pin_t;
 #define SERVOMAP_FILE     "/SERVOMAP.json"
 #define STEPPERMAP_FILE   "/REVOLVERMAP.json"
 #define DATASTORE_FILE    "/EEPROM.json"
+#define DRYER_FILE        "/DRYER.json"
+#define SENSOR_LOGFILE    "/Sensor.log"
 #define STARTUP_FILE      "STARTUP.DAT"
 #define BEEP_FILE         "BEEP.DAT"
 #define LONGBEEP_FILE     "LBEEP.DAT"
 #define USERBEEP_FILE     "UBEEP.DAT"
 #define ENCBEEP_FILE      "EBEEP.DAT"
+#define DRYERBEEP_FILE    "DRYER.DAT"
 #define ENCBEEPLEO_FILE   "EBEEP_LEONERD.DAT"
 
 #define MAX_MATERIAL_LEN        5                   // max. length of materials
@@ -53,6 +56,7 @@ typedef uint32_t    pin_t;
 #define MAX_UNLOAD_COMMAND      20                  // max. length of unload command
 #define MAX_WIPE_SEQUENCE       25                  // max. length of wipe sequence
 #define MAX_BUTTON_LEN          15                  // max. length of button commands
+#define MAX_SPINCMD_LEN         30                  // max. length of spin command
 
 #define MAX_ERR_MSG             255                 // max. length of error messages
 
@@ -71,6 +75,8 @@ typedef uint32_t    pin_t;
 #define MAX_CONTRAST            250
 
 #define I2C_SLAVE_ADDRESS       0x88        // default address if the SMuFF I2C is running in slave mode (obsolete)
+#define I2C_AHT10_1_ADDRESS     0x38        // default address for the first AHT10 Temp./Humidity sensor
+#define I2C_AHT10_2_ADDRESS     0x39        // default address for the second AHT10 Temp./Humidity sensor
 #define I2C_DISPLAY_ADDRESS     0x3C        // default address for the OLED (alternative 0x3D)
 #define I2C_ENCODER_ADDRESS     0x3D        // default address for the LeoNerd Encoder
 #define I2C_SERVOCTL_ADDRESS    0x40        // default address for Multiservo controller
@@ -78,10 +84,12 @@ typedef uint32_t    pin_t;
 #define I2C_MOTORCTL1_ADDRESS   0x41        // default address for 1st motor controller (Waveshare)
 #define I2C_MOTORCTL2_ADDRESS   0x42        // default address for 2nd motor controller
 #define I2C_MOTORCTL3_ADDRESS   0x43        // default address for 3rd motor controller
+#define I2C_MOTORCTL4_ADDRESS   0x44        // default address for 4th motor controller
 #else
 #define I2C_MOTORCTL1_ADDRESS   0x61        // default address for 1st motor controller (FeatherWing)
 #define I2C_MOTORCTL2_ADDRESS   0x62        // default address for 2nd motor controller
 #define I2C_MOTORCTL3_ADDRESS   0x63        // default address for 3rd motor controller
+#define I2C_MOTORCTL4_ADDRESS   0x64        // default address for 4th motor controller
 #endif
 #define I2C_SMUFF_WI_ADDRESS    0x45        // ESP8266 on Backbone-Board
 #define I2C_EEPROM_ADDRESS      0x50        // default address for EEPROM on E3 2.0, 3.0
@@ -97,6 +105,8 @@ typedef uint32_t    pin_t;
 #define RELAY               5
 #define SERVO_USER1         6
 #define SERVO_USER2         7
+#define D1_MINI_FLASH       13
+#define D1_MINI_RESET       14
 
 #define OUT1                6               // yet unused output assignment on PCA9685 (Multiservo)
 #define OUT2                7
@@ -128,7 +138,7 @@ typedef uint32_t    pin_t;
 #define MD_IN2              11
 #define ME_PWM              12              // not on ME704! but possible on a custom made PCB
 #define ME_IN1              13
-#define ME_IN2              14A
+#define ME_IN2              14
 #else
 // output assignment on PCA9685 (FeatherWing Motor Shield)
 #define MA_PWM              8               // M1
@@ -167,9 +177,12 @@ typedef uint32_t    pin_t;
 #define SERVO_RESOLUTION    50                          // servo ISR called every n microseconds
 #define FAN_RESOLUTION      GPTIMER_RESOLUTION          // fan ISR service interval same as GP-Timer
 #define LED_RESOLUTION      10000                       // led ISR called every n microseconds
+#define HEATER_RESOLUTION   GPTIMER_RESOLUTION          // heater ISR service interval same as GP-Timer
 
 #define FAN_FREQUENCY       100                         // fan frequency in Hz
 #define FAN_BLIP_TIMEOUT    1000                        // fan blip timeout in millis (0 to turn blipping off)
+
+#define HEATER_FREQUENCY    100                         // heater frequency in Hz
 
 #define FEED_ERROR_RETRIES  4
 

@@ -1,46 +1,61 @@
 M205 P"..." S n | n.n | "..." [ I | X | Y | Z | M ]
 
-Parameter Name In P 	Option
+Name In P"..."      	Option
 -------------------------------------------
 AccelDist           	S n      X | Y | Z
 AccelSpeed          	S n      X | Y | Z
+ADC_RES             	S n
+ADC_R1              	S n
 AnimBPM             	S n
+AutoRewind          	S 0|1
 AutoWipe            	S 0|1
 			-= B =-
 BackColor           	S n
-Baudrates           	S "..." I 0..3
+Baudrates           	S "..."  I 0..3
 BowdenLen           	S n.n
 			-= C =-
+CCW                 	S 0|1
 ChangeDbg           	S 0..3
 Chunks              	S n
-Close               	S 0..180 I 0..11
-Color               	S "..."  I 0..11
-CSDown              	S n      X | Y | Z
-CSMax               	S n      X | Y | Z
-CSMin               	S n      X | Y | Z
+Close               	S 0..180  I 0..11
+Color               	S "..."   I 0..11
+CSDown              	S n       X | Y | Z
+CSMax               	S n       X | Y | Z
+CSMin               	S n       X | Y | Z
 CutterTop           	S 0|1
-CValue              	S "..."  I 0..11
+CValue              	S "..."   I 0..11
 			-= D =-
 DbgLevel            	S n
 DebugFreq           	S n
 Device              	S "..."
-DrvAddr             	S n      X | Y | Z
+DrvAddr             	S n       X | Y | Z
+DynFanSpeeds        	S 0..100  I 0..3
 			-= E =-
 EmulPrusa           	S 0|1
 EncTicks            	S 0|1
 EStopTest           	S 0|1
-EStopTrg            	S 0|1    X | Y | Z
+EStopTrg            	S 0|1     X | Y | Z
 ExtCtrl             	S 0|1
 			-= F =-
-FanSpeed            	S n
+FanSpeed            	S 0..100
+Fan1Dyn              	S 0|1
+Fan1Speed            	S 0..100
+Fan2Dyn              	S 0|1
+Fan2Speed            	S 0..100
 			-= H =-
 HasPanelDue         	S 0|1
+HeaterDeltaErr      	S n
+HeaterDeltaMin      	S n.n
+HeaterDeltaMax      	S n.n
+HeaterMaxTemp       	S n
 HomeAfterFd         	S 0|1
+HumidityLevels      	S n       I 0..3
+
 			-= I =-
 IdleAnim            	S 0|1
 InsLen              	S n.n
 InsSpeed            	S n
-InvDir              	S 0|1    X | Y | Z
+InvDir              	S 0|1     X | Y | Z
 InvDuet             	S 0|1
 InvRelay            	S 0|1
 			-= L =-
@@ -50,20 +65,22 @@ LCDCont             	S 60..255
 LedAnimation        	S 1..3
 LedRefresh          	S 1..2000 I 0..1
 LedsPerTool         	S 1..7
+LogSensor1          	S 0|1
+LogSensor2          	S 0|1
 			-= M =-
-Material            	S "..."  I 0..11
-MaxSpeed            	S n      X | Y | Z
-MaxStall            	S n      X | Y | Z
+Material            	S "..."   I 0..11
+MaxSpeed            	S n       X | Y | Z
+MaxStall            	S n       X | Y | Z
 MenuClose           	S n
-Mode                	S 0|1|2  X | Y | Z
+Mode                	S 0|1|2   X | Y | Z
 MS                  	S 0|2|4|8|16|32|64|128|256   X | Y | Z
 MS3                 	S 0|1|2
 			-= O =-
-Offset              	S n.n    X | Y | Z
-Output              	S 0..15  I 0..11
+Offset              	S n.n     X | Y | Z
+Output              	S 0..15   I 0..11
 			-= P =-
-PFactor             	S n      I 0..11
-Power               	S n      X | Y | Z
+PFactor             	S n       I 0..11
+Power               	S n       X | Y | Z
 PurgeDDE            	S n
 PurgeLen            	S n
 PurgeSpeed          	S n
@@ -73,7 +90,7 @@ RBtnDown            	S "..."
 RBtnHold            	S "..."
 ReinforceLen        	S n.n
 ResetBeforeFd       	S 0|1
-RSense              	S n.n    X | Y | Z
+RSense              	S n.n     X | Y | Z
 			-= S =-
 SelectorDist        	S n.n
 SendAction          	S 0|1
@@ -83,25 +100,37 @@ ServoMaxPwm         	S 500..2500
 ServoMinPwm         	S 500..2500
 ServoOpen           	S 0..180
 SharedStepper       	S 0|1
+SHC_A               	S n.n
+SHC_B               	S n.n
+SHC_C               	S n.n
 Spacing             	S n.n
-SplitterDist        	S n.n
 SpdsInMms           	S 0|1
-Stall               	S n      X | Y | Z
+SpinDuration        	S 100.3000
+SpinInterval        	S 5..255
+SpinSpeed           	S 10..255
+SpinSpool           	S 0..11
+SplitterDist        	S n.n
+SpoolSpeed          	S 1..255
+Spool               	S 0..12
+Stall               	S n       X | Y | Z
 StatusBPM           	S n
-StepDly             	S n      X | Y | Z
-StepsMM             	S n      X | Y | Z
+StepDly             	S n       X | Y | Z
+StepsMM             	S n       X | Y | Z
 StepsRev            	S n
-StopOnStall         	S 0|1    X | Y | Z
+StopOnStall         	S 0|1     X | Y | Z
 SyncSteppers        	S 0|1
 			-= T =-
 TermMenu            	S 0|1
-TMode               	S 0|1    X | Y | Z
-TOff                	S n      X | Y | Z
+TH_Beta             	S n
+TH_R25              	S n
+TMode               	S 0|1     X | Y | Z
+TOff                	S n       X | Y | Z
 ToolColor           	S 0..15
 Tools               	S n
 TraceUSB            	S 0|1
 			-= U =-
 UnldRetract         	S n
+UseBeta             	S 0|1
 UseChunks           	S 0|1
 UseCutter           	S 0|1
 UseDuet             	S 0|1
@@ -112,4 +141,4 @@ UseSplitter         	S 0|1
 			-= W =-
 WipeSeq             	S "..."
 			-= X =-
-XlateSpeed          	S n  X | Y | Z  [ M 0|1 ]    (M0: S=mm/s, M1: S=mm/m)
+XlateSpeed          	S n       X | Y | Z  [ M 0|1 ]    (M0: S=mm/s, M1: S=mm/m)

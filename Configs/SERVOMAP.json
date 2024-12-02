@@ -4,7 +4,7 @@
    "Cutter":   { "Output": 2,  "Mode": "PWM" },
    "Spare1":   { "Output": 3,  "Mode": "PWM" },
    "Spare2":   { "Output": 4,  "Mode": "PWM" },
-   "Relay":    { "Output": 5,  "Mode": "OUTPUT" },
+   "Relay":    { "Output": 15, "Mode": "OUTPUT" },
    "User1":    { "Output": 6,  "Mode": "PWM" },
    "User2":    { "Output": 7,  "Mode": "PWM" },
    "T0":       { "Close": 90 },

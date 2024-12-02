@@ -27,7 +27,7 @@ void testSpoolMotors() {
 
 void setOutputs(Adafruit_PWMServoDriver* instance, uint8_t motor, uint8_t direction, uint8_t speed) {
     uint16_t pulse = speed * (4095/255);
-    __debugS(DEV3, PSTR("Setting Motor Output; Motor: M%c Speed=%d, Pulse=%d"), 'A'+motor, speed, pulse);
+    // __debugS(DEV4, PSTR("Setting Motor Output; Motor: M%c Speed=%d, Pulse=%d"), 'A'+motor, speed, pulse);
 
     int pwm = motorPins[motor][0];
     if(direction == MOTOR_DIR_CW) {
@@ -51,7 +51,12 @@ void doWind(uint8_t direction, int8_t motorIndex, uint8_t speed) {
     uint8_t board = (motorIndex == 0) ? 0 : motorIndex / MOTORS_PER_CTRL;
     uint8_t motor = motorIndex % MOTORS_PER_CTRL;
 
-    __debugS(DEV3, PSTR("Winding spool motor; Direction %s; Board=%d, Motor=M%c, Speed=%d"), (direction == MOTOR_DIR_CW ? "CW" : (direction == MOTOR_DIR_CCW ? "CCW" : "STOP")), board+1, 'A'+motor, speed);
+    #if !defined(USE_SPOOLMOTOR_FEATHERWING)
+    char motorName = 'A'+motor;
+    #else
+    char motorName = '1'+motor;
+    #endif
+    __debugS(DEV3, PSTR("Winding spool motor; Direction %s; Board=%d, Motor=M%c, Speed=%d"), (direction == MOTOR_DIR_CW ? "CW" : (direction == MOTOR_DIR_CCW ? "CCW" : "STOP")), board+1, motorName, speed);
     Adafruit_PWMServoDriver* instance = nullptr;
     switch(board) {
         case 0:
@@ -62,6 +67,9 @@ void doWind(uint8_t direction, int8_t motorIndex, uint8_t speed) {
             break;
         case 2: 
             instance = &motor3Pwm;
+            break;
+        case 3: 
+            instance = &motor4Pwm;
             break;
         default:
             break;

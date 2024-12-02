@@ -157,25 +157,27 @@ void setupMainMenu(char* menu, size_t maxBuffer) {
   char motors[10];
   char servo[20];
   char maint[10];
+  char dryer[10];
 
   steppers[SELECTOR].getEnabled() ? sprintf_P(motors, P_Off) : sprintf_P(motors, P_On);
   lidOpen ? sprintf_P(servo, P_Close) : sprintf_P(servo, P_Open);
   maintainingMode ? sprintf_P(maint, P_Off) : sprintf_P(maint, P_On);
+  isHeating ? sprintf_P(dryer, P_StopDryer) : sprintf_P(dryer, P_FilamentDryer);
 
   if(smuffConfig.revolverIsServo && smuffConfig.prusaMMU2) {
-    snprintf(menu, maxBuffer, loadMenu(P_MnuMain0, menuOrdinals, maxBuffer), motors, servo, maint);
+    snprintf(menu, maxBuffer, loadMenu(P_MnuMain0, menuOrdinals, maxBuffer), motors, servo, maint, dryer);
   }
   else if(smuffConfig.revolverIsServo && !smuffConfig.prusaMMU2 && !smuffConfig.useSplitter) {
-    snprintf(menu, maxBuffer, loadMenu(P_MnuMain1, menuOrdinals, maxBuffer), motors, servo, maint);
+    snprintf(menu, maxBuffer, loadMenu(P_MnuMain1, menuOrdinals, maxBuffer), motors, servo, maint, dryer);
   }
   else if(!smuffConfig.revolverIsServo && smuffConfig.prusaMMU2) {
-    snprintf(menu, maxBuffer, loadMenu(P_MnuMain2, menuOrdinals, maxBuffer), motors, maint);
+    snprintf(menu, maxBuffer, loadMenu(P_MnuMain2, menuOrdinals, maxBuffer), motors, maint, dryer);
   }
   else if(smuffConfig.revolverIsServo && !smuffConfig.prusaMMU2 && smuffConfig.useSplitter) {
-    snprintf(menu, maxBuffer, loadMenu(P_MnuMain4, menuOrdinals, maxBuffer), motors, servo, maint);
+    snprintf(menu, maxBuffer, loadMenu(P_MnuMain4, menuOrdinals, maxBuffer), motors, servo, maint, dryer);
   }
   else {
-    snprintf(menu, maxBuffer, loadMenu(P_MnuMain3, menuOrdinals, maxBuffer), motors, maint);
+    snprintf(menu, maxBuffer, loadMenu(P_MnuMain3, menuOrdinals, maxBuffer), motors, maint, dryer);
   }
 }
 
@@ -385,6 +387,15 @@ void setupTestrunMenu(char* menu, size_t maxBuffer, uint8_t maxFiles) {
   //__debugS(I, PSTR("Test-Files:\n%s"), items);
 }
 
+void setupDryerMenu(char* menu, size_t maxBuffer, uint16_t duration, int targetTemp, bool dynFan) {
+  snprintf(menu, maxBuffer, loadMenu(P_MnuDryer, menuOrdinals, maxBuffer),
+    duration,
+    targetTemp,
+    dynFan ? P_Yes : P_No
+  );
+}
+
+
 void showMainMenu() {
   bool      stopMenu = false;
   uint32_t  startTime = millis();
@@ -489,6 +500,19 @@ void showMainMenu() {
           current_selection = 1;
           break;
 
+        case 20:
+          #if defined(USE_DRYER)
+          if(isHeating)
+            stopDryer();
+          else
+            showDryerMenu(title);
+          stopMenu = true;
+          #else
+            drawUserMessage(String(P_NoDryerConfigured));
+            delay(2000);
+          #endif
+          break;
+/*
         case 19:
           loadToSplitter(errmsg, true);
           break;
@@ -496,6 +520,7 @@ void showMainMenu() {
         case 20:
           unloadFromSplitter(errmsg, true);
           break;
+*/
 
       }
       startTime = millis();
@@ -710,6 +735,14 @@ void animationBpmCallback(int val) {
         delay(25);
       }
   #endif
+}
+
+void selectDryingTime(char* menuTitle, uint16_t* duration) {
+  showInputDialog(menuTitle, P_InMinutes, duration, 1, 720);
+}
+
+void selectDryingTemp(char* menuTitle, int* targetTemp) {
+  showInputDialog(menuTitle, P_InCelsius, targetTemp, 30, smuffConfig.heaterMaxTemp);
 }
 
 void showTMCMenu(char* menuTitle, uint8_t axis) {
@@ -2182,6 +2215,57 @@ void showToolsMenu() {
   }
 }
 
+void showDryerMenu(char* menuTitle) {
+  bool stopMenu = false;
+  uint32_t startTime = millis();
+  uint8_t current_selection = 0;
+  char* title;
+  char _subtitle[80];
+  char _menu[300];
+  uint16_t duration = 60;
+  int targetTemp = 75;
+  bool dynFan = dryerFan1Dynamic;
+
+  while(!stopMenu) {
+    setupDryerMenu(_menu, ArraySize(_menu)-1, duration, targetTemp, dynFan);
+    resetAutoClose();
+    stopMenu = checkStopMenu(startTime);
+
+    current_selection = display.userInterfaceSelectionList(menuTitle, current_selection, _menu);
+    uint8_t fnc = menuOrdinals[current_selection];
+
+    if(current_selection == 0)
+      return;
+    else {
+      title = extractTitle(_menu, current_selection-1, _subtitle, ArraySize(_subtitle)-1);
+      switch(fnc) {
+        case 1:
+          stopMenu = true;
+          break;
+
+        case 2:   // Timeout
+          selectDryingTime(title, &duration);
+          break;
+
+        case 3:   // Target Temp
+          selectDryingTemp(title, &targetTemp);
+          break;
+
+        case 4:   // Dyn. Fan
+          showInputDialog(title, P_YesNo, &dynFan);
+          break;
+
+        case 6:   // Start drying
+          startDryer((uint8_t)targetTemp, (uint32_t)duration*60, 0, 0, dynFan);
+          stopMenu = true;
+          break;
+      }
+      startTime = millis();
+    }
+    settingsChanged = false;
+  }
+}
+
 bool checkStopMenu(unsigned startTime) {
   if(forceStopMenu)
     return true;
@@ -2189,6 +2273,7 @@ bool checkStopMenu(unsigned startTime) {
     return true;
   if(millis() - startTime > (unsigned long)smuffConfig.menuAutoClose * 1000)
     return true;
+  handlePeriodicals();
   return false;
 }
 
@@ -2199,6 +2284,7 @@ bool checkAutoClose() {
     return true;
   if (millis() - lastEncoderButtonTime >= (unsigned long)smuffConfig.menuAutoClose * 1000)
     return true;
+  handlePeriodicals();
   return false;
 }
 

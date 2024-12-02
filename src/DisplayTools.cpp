@@ -25,6 +25,8 @@ bool            isWarning;
 uint16_t        userMessageTime = 0;
 static unsigned termRefresh = 0;
 static uint32_t dialogId = 1;
+static uint32_t humidCnt = 0;
+uint8_t         flipTempHum = 0;
 
 #ifdef HAS_TMC_SUPPORT
 TMC2209Stepper *showDriver = nullptr;
@@ -33,12 +35,13 @@ TMC2209Stepper *showDriver = nullptr;
 #if !defined(USE_SERIAL_DISPLAY)
 #define BASE_FONT               u8g2_font_6x12_t_symbols
 #define BASE_FONT_BIG           u8g2_font_7x14_tr
-#define SMALL_FONT              u8g2_font_6x10_tr
+#define SMALL_FONT              u8g2_font_6x10_tf
 #define STATUS_FONT             BASE_FONT_BIG
 #define LOGO_FONT               BASE_FONT
 #define ICONIC_FONT             u8g2_font_open_iconic_check_2x_t
 #define ICONIC_FONT2            u8g2_font_open_iconic_embedded_2x_t
 #define ICONIC_FONT3            u8g2_font_open_iconic_other_2x_t
+#define ICONIC_FONT4            u8g2_font_open_iconic_thing_2x_t
 #define TOOL_FONT               u8g2_font_logisoso22_tr
 
 void setupDisplay() {
@@ -94,6 +97,7 @@ void drawStatus() {
   char mode[10];
   char relay[10];
   char driver[20];
+  char htTmp[10];
 
   display.setFont(TOOL_FONT);
   display.setFontMode(0);
@@ -115,15 +119,20 @@ void drawStatus() {
   uint8_t yBox = y-15;
   uint8_t yText = y-2;
   uint8_t boxHeight = display.getMaxCharHeight()+2;
+  uint16_t yBottom = display.getDisplayHeight()-1;
 
+
+  // draw Relay status
   display.drawFrame(0, yBox, 10, boxHeight);
   sprintf_P(relay, PSTR("%1s"), smuffConfig.externalStepper ? PSTR("E") : PSTR("I"));
   display.drawStr(2, yText, relay);
 
+  // draw mode
   display.drawFrame(14, yBox, 38, boxHeight);
   sprintf_P(mode, PSTR("%5s"), (smuffConfig.prusaMMU2) ? P_Pemu : PSTR("SMuFF"));
   display.drawStr(16, yText, mode);
 
+// draw stepper driver setup
 #if HAS_TMC_SUPPORT
   display.drawFrame(56, yBox, 27, boxHeight);
   display.drawBox(83, yBox, 9, boxHeight);
@@ -150,16 +159,15 @@ void drawStatus() {
   display.setFont(STATUS_FONT);
 #endif
 
+  // draw Purge status
   display.drawFrame(96, yBox, 11, boxHeight);
-  if(smuffConfig.usePurge) {
-    display.drawStr(99, yText, PSTR("P"));
-  }
-  else {
-    display.setFont(SMALL_FONT);
-    display.drawStr(99, yText-2, PSTR("x"));
-    display.setFont(STATUS_FONT);
+  display.drawStr(99, yText, PSTR("P"));
+  if(!smuffConfig.usePurge) {
+    display.drawLine(96, yBox+7, 106, yBox+7);
+    display.drawLine(96, yBox+8, 106, yBox+8);
   }
 
+  // draw sending Periodical stats
   display.setFont(ICONIC_FONT2);
   if(sendingStatesToggle)
     display.drawGlyph(111, y+1, 0x4F);
@@ -169,10 +177,71 @@ void drawStatus() {
     display.setFont(SMALL_FONT);
     display.drawStr(117, yText-2, PSTR("x"));
   }
+  
+  #if defined(USE_DRYER)
+    display.setFont(ICONIC_FONT4);
+    if(isHeaterOn)
+      display.drawGlyph(60, 18, 0x4E);
+    else
+      display.drawStr(60, 18, " ");
 
+    display.setFont(SMALL_FONT);
+    if(isHeating || (!isHeating && heater1 > 45)) {
+      snprintf_P(htTmp, ArraySize(htTmp)-1, PSTR("%s%c"), String(heater1,1).c_str(), 0xB0);
+      display.drawStr(56, 31, htTmp);
+    }
+#endif
+
+  display.drawBox(0, yBottom-8, 128, 9);
+  display.setDrawColor(2);
+
+  // draw status
   display.setFont(SMALL_FONT);
-  sprintf_P(tmp, PSTR("        %5s  %6s"), parserBusy ? P_Busy : (feederJammed ? P_Jammed : P_Ready), brand);
-  display.drawStr(1, display.getDisplayHeight()-1, tmp);
+  sprintf_P(tmp, PSTR("          %3s"), parserBusy ? P_Busy : (feederJammed ? P_Jammed : P_Ready));
+  display.drawStr(1, yBottom, tmp);
+  // draw version string
+  sprintf_P(tmp, PSTR(" %6s"), brand);
+  #if defined(USE_DRYER)
+    if(flipTempHum == 2 || flipTempHum == 4) {
+      if(isHeating) {
+        if (isHeaterSet)
+          sprintf_P(tmp, PSTR("%6s"), P_Drying);
+        else
+          sprintf_P(tmp, PSTR("%6s"), P_Heating);
+      }
+      else if(heater1 > 45) {
+        sprintf_P(tmp, PSTR("%6s"), P_Cooling);
+      }
+    }
+  #endif
+  display.drawStr(86, yBottom, "       ");
+  display.drawStr(86, yBottom, tmp);
+
+  #if defined(USE_DRYER)
+    snprintf_P(tmp, ArraySize(tmp)-1, PSTR("         "));
+    if(aht10SensorsFound > 1) {
+      if(flipTempHum == 4) {
+        dtostrf(humidity2, 3, 1, htTmp);
+        snprintf_P(tmp, ArraySize(tmp)-1, PSTR("2: %s%%"), htTmp);
+      }
+      else if(flipTempHum == 3) {
+        dtostrf(temp2, 3, 1, htTmp);
+        snprintf_P(tmp, ArraySize(tmp)-1, PSTR("2: %s%c"), htTmp, 0xB0);
+      }
+    }
+    if(aht10SensorsFound > 0) {
+      if(flipTempHum == 2) {
+        dtostrf(humidity1, 3, 1, htTmp);
+        snprintf_P(tmp, ArraySize(tmp)-1, PSTR("1: %s%%"), htTmp);
+      }
+      else if(flipTempHum == 1) {
+        dtostrf(temp1, 3, 1, htTmp);
+        snprintf_P(tmp, ArraySize(tmp)-1, PSTR("1: %s%c"), htTmp, 0xB0);
+      }
+    }
+    display.drawStr(1, yBottom, PSTR("         "));
+    display.drawStr(1, yBottom, tmp);
+  #endif
 
   display.setFontMode(0);
   display.setDrawColor(1);
@@ -479,6 +548,9 @@ void drawSDStatus(int8_t stat, uint8_t opt)
       break;
     case STAT_SCANNING_I2C:
       snprintf_P(tmp, ArraySize(tmp)-1, P_Scanning, opt);
+      break;
+    case SD_READING_DRYER:
+      snprintf_P(tmp, ArraySize(tmp)-1, P_SD_Reading, P_SD_ReadingDryer);
       break;
   }
   // __debugS(DEV4, PSTR("\tdrawSDStatus: status => '%s'"), tmp);

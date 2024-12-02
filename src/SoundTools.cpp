@@ -20,17 +20,18 @@
 
 uint16_t        sequence[MAX_SEQUENCE][3];    // store for tune sequence for background playing
 
-char PROGMEM    tuneStartup[MAX_TUNE1] = {"F1760D90.F1975D90.F2093D90.F1975D90.F1760D200P50."}; // the "traditional" tune
-char PROGMEM    tuneUser[MAX_TUNE2] = {"F1760D90P90.F440D90P90.F440D90P90."};
-char PROGMEM    tuneBeep[MAX_TUNE3] = {"F1760D90P200."};
+char PROGMEM    tuneStartup[MAX_TUNE1]  = {"F1760D90.F1975D90.F2093D90.F1975D90.F1760D200P50."}; // the "traditional" tune
+char PROGMEM    tuneUser[MAX_TUNE2]     = {"F1760D90P90.F440D90P90.F440D90P90."};
+char PROGMEM    tuneBeep[MAX_TUNE3]     = {"F1760D90P200."};
 char PROGMEM    tuneLongBeep[MAX_TUNE3] = {"F1760D450P500."};
+char PROGMEM    tuneDryer[MAX_TUNE2]    = {"F440D20P90.F1760D20P90.F440D20P90.F1760D20P90.F2200D20P90.F2200D20P90."};
 #if defined(USE_LEONERD_DISPLAY)
-char PROGMEM    tuneEncoder[MAX_TUNE3] = {"F330D10P10."};
+char PROGMEM    tuneEncoder[MAX_TUNE3]  = {"F330D10P10."};
 #else
-char PROGMEM    tuneEncoder[MAX_TUNE3] = {"F1440D3."};
+char PROGMEM    tuneEncoder[MAX_TUNE3]  = {"F1440D3."};
 #endif
 uint8_t         sequenceSerial;
-const char*     tuneNames[] = { "", "Beep", "LongBeep", "Startup", "User" };
+const char*     tuneNames[] = { "", "Beep", "LongBeep", "Startup", "User", "Dryer" };
 
 #define _F_ 0     // Frequency index
 #define _D_ 1     // Duration index
@@ -94,6 +95,14 @@ void startupBeep() {
   showLed(4, 1);
 #endif
   prepareSequence(tuneStartup, true);
+}
+
+void dryerBeep() {
+#if defined(USE_LEONERD_DISPLAY)
+  showLed(4, 1);
+#endif
+  prepareSequence(tuneDryer, false);
+  playSequence();
 }
 
 /*

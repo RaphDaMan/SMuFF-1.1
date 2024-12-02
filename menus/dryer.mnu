@@ -1,0 +1,6 @@
+< BACK|1
+Duration	%d min.|2
+Temperature	%d C|3
+Dynamic Fan 1	%s|4
+-
+>>START DRYING<<|6

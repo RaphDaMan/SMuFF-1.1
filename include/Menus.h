@@ -34,6 +34,7 @@ extern void setupFeederMenu(char* menu, size_t maxBuffer);
 extern void setupSelectorMenu(char* menu, size_t maxBuffer);
 extern void setupDisplayMenu(char* menu, size_t maxBuffer);
 extern void setupTestrunMenu(char* menu, size_t maxBuffer);
+extern void setupDryerMenu(char* menu, size_t maxBuffer, uint16_t duration, int targetTemp, bool dynFan);
 
 extern void showMainMenu();
 extern void showToolsMenu();
@@ -50,6 +51,7 @@ extern void selectDuet3DPort(char* menuTitle);
 extern void selectPanelDuePort(char* menuTitle);
 extern void showPurgeMenu(char* menuTitle);
 extern void initAdaNeoPx();
+extern void showDryerMenu(char* menuTitle);
 
 extern const char* translateColor(uint8_t color, uint8_t index);
 extern const char* translateDuet3DPort(uint8_t port);
